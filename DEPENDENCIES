@@ -1,0 +1,24 @@
+RUNTIME DEPENDENCIES:
+
+	python3
+	libcoopgamma
+	libc
+
+
+BUILD DEPENDENCIES:
+
+	python3
+	libcoopgamma
+	libc
+	make
+	c99
+	cython
+	coreutils
+	pkg-config
+
+
+INSTALL DEPENDENCIES:
+
+	make
+	coreutils
+
