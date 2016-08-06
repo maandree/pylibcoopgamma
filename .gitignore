@@ -1,0 +1,14 @@
+bin/
+obj/
+\#*\#
+*~
+__pycache__/
+*.bak
+*.sw[op]
+*.o
+*.out
+*.su
+*.so
+*.gch
+*.py[co]
+src/*_native_*.c
