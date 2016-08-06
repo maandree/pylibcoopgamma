@@ -530,7 +530,7 @@ class ErrorReport:
         @return  :str  Parsable representation of the instance
         '''
         params = (self.number, self.custom, self.server_side, self.description)
-        return 'ErrorReport.FilterTable(%s)' % ', '.join(repr(p) for p in params)
+        return 'libcoopgamma.ErrorReport(%s)' % ', '.join(repr(p) for p in params)
 
 
 class Context:
