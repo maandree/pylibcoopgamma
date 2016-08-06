@@ -93,17 +93,43 @@ class Ramps:
     @variable  green:list<int>  The green gamma ramp
     @variable  blue:list<int>   The blue gamma ramp
     '''
-    def __init__(self, red_size : int, green_size : int, blue_size : int):
+    def __init__(self, red, green, blue):
         '''
         Constructor
         
-        @param  red_size:int    The number of stops in the red ramp
-        @param  green_size:int  The number of stops in the green ramp
-        @param  blue_size:int   The number of stops in the blue ramp
+        @param  red:int    The number of stops in the red ramp
+        @param  green:int  The number of stops in the green ramp
+        @param  blue:int   The number of stops in the blue ramp
+        
+        -- or --
+        
+        @param  red:list<int>    The red gamma ramp
+        @param  green:list<int>  The green gamma ramp
+        @param  blue:list<int>   The blue gamma ramp
         '''
-        self.red   = [0] * red_size
-        self.green = [0] * green_size
-        self.blue  = [0] * blue_size
+        if isinstance(red, list):
+            self.red   = list(red)
+            self.green = list(green)
+            self.blue  = list(blue)
+        else:
+            self.red   = [0] * red
+            self.green = [0] * green
+            self.blue  = [0] * blue
+    
+    def clone(self) -> Ramps:
+        '''
+        Create a copy of the instance
+        '''
+        return Ramps(self.red, self.green, self.blue)
+    
+    def __repr__(self) -> str:
+        '''
+        Create a parsable string representation of the instance
+        
+        @return  :str  Parsable representation of the instance
+        '''
+        params = (self.red, self.green, self.blue)
+        return 'libcoopgamma.Ramps(%s)' % ', '.join(repr(p) for p in params)
 
 
 class Filter:
@@ -145,6 +171,24 @@ class Filter:
         self.lifespan = lifespan
         self.depth = depth
         self.ramps = ramps
+    
+    def clone(self, shallow = False) -> Filter:
+        '''
+        Create a copy of the instance
+        
+        @param  shallow:bool  Create a shallow copy?
+        '''
+        ramps = self.ramps if shallow else self.ramps.clone()
+        return Filter(self.priority, self.crtc, self.fclass, self.lifespan, self.depth, ramps)
+    
+    def __repr__(self) -> str:
+        '''
+        Create a parsable string representation of the instance
+        
+        @return  :str  Parsable representation of the instance
+        '''
+        params = (self.priority, self.crtc, self.fclass, self.lifespan, self.depth, self.ramps)
+        return 'libcoopgamma.Filter(%s)' % ', '.join(repr(p) for p in params)
 
 
 class GamutPoint:
@@ -165,6 +209,21 @@ class GamutPoint:
         '''
         self.x_raw, self.x = x, x / 1024
         self.y_raw, self.y = y, y / 1024
+    
+    def clone(self) -> GamutPoint:
+        '''
+        Create a copy of the instance
+        '''
+        return GamutPoint(self.x_raw, self.y_raw)
+    
+    def __repr__(self) -> str:
+        '''
+        Create a parsable string representation of the instance
+        
+        @return  :str  Parsable representation of the instance
+        '''
+        params = (self.x_raw, self.y_raw)
+        return 'libcoopgamma.GamutPoint(%s)' % ', '.join(repr(p) for p in params)
 
 
 class Gamut:
@@ -186,6 +245,25 @@ class Gamut:
         self.red   = red
         self.green = green
         self.blue  = blue
+    
+    def clone(self, shallow = True) -> Gamut:
+        '''
+        Create a copy of the instance
+        
+        @param  shallow:bool  Create a shallow copy?
+        '''
+        if shallow:
+            return Gamut(self.red, self.green, self.blue)
+        return Gamut(self.red.clone(), self.green.clone(), self.blue.clone())
+    
+    def __repr__(self) -> str:
+        '''
+        Create a parsable string representation of the instance
+        
+        @return  :str  Parsable representation of the instance
+        '''
+        params = (repr(self.red), repr(self.green), repr(self.blue))
+        return 'libcoopgamma.Gamut(%s)' % ', '.join(repr(p) for p in params)
 
 
 class CRTCInfo:
@@ -242,6 +320,26 @@ class CRTCInfo:
                          matching this CRTC
         '''
         return Ramps(self.red_size, self.green_size, self.blue_size)
+    
+    def clone(self, shallow = True) -> CRTCInfo:
+        '''
+        Create a copy of the instance
+        
+        @param  shallow:bool  Create a shallow copy?
+        '''
+        return CRTCInfo(self.cooperative, self.depth, self.supported, self.red_size,
+                        self.green_size, self.blue_size, self.colourspace,
+                        self.gamut if shallow else self.gamut.clone())
+    
+    def __repr__(self) -> str:
+        '''
+        Create a parsable string representation of the instance
+        
+        @return  :str  Parsable representation of the instance
+        '''
+        params = (self.cooperative, self.depth, self.supported, self.red_size,
+                  self.green_size, self.blue_size, self.colourspace, self.gamut)
+        return 'libcoopgamma.CRTCInfo(%s)' % ', '.join(repr(p) for p in params)
 
 
 class FilterQuery:
@@ -270,6 +368,21 @@ class FilterQuery:
         self.low_priority = low_priority
         self.crtc = crtc
         self.coalesce = coalesce
+    
+    def clone(self) -> FilterQuery:
+        '''
+        Create a copy of the instance
+        '''
+        return FilterQuery(self.high_priority, self.low_priority, self.crtc, self.coalesce)
+    
+    def __repr__(self) -> str:
+        '''
+        Create a parsable string representation of the instance
+        
+        @return  :str  Parsable representation of the instance
+        '''
+        params = (self.high_priority, self.low_priority, self.crtc, self.coalesce)
+        return 'libcoopgamma.FilterQuery(%s)' % ', '.join(repr(p) for p in params)
 
 
 class QueriedFilter:
@@ -292,6 +405,24 @@ class QueriedFilter:
         self.priority = priority
         self.fclass = fclass
         self.ramps = ramps
+    
+    def clone(self, shallow = False) -> QueriedFilter:
+        '''
+        Create a copy of the instance
+        
+        @param  shallow:bool  Create a sallow copy?
+        '''
+        ramps = self.ramps if shallow else self.ramps.clone()
+        return QueriedFilter(self.priority, self.fclass, ramps)
+    
+    def __repr__(self) -> str:
+        '''
+        Create a parsable string representation of the instance
+        
+        @return  :str  Parsable representation of the instance
+        '''
+        params = (self.priority, self.fclass, self.ramps)
+        return 'libcoopgamma.QueriedFilter(%s)' % ', '.join(repr(p) for p in params)
 
 
 class FilterTable:
@@ -340,6 +471,24 @@ class FilterTable:
                          matching this CRTC
         '''
         return Ramps(self.red_size, self.green_size, self.blue_size)
+    
+    def clone(self, shallow = False) -> FilterTable:
+        '''
+        Create a copy of the instance
+        
+        @param  shallow:bool  Create a sallow copy?
+        '''
+        filters = list(self.filters) if shallow else [f.clone() for f in self.filters]
+        return FilterTable(self.red_size, self.green_size, self.blue_size, self.depth, filters)
+    
+    def __repr__(self) -> str:
+        '''
+        Create a parsable string representation of the instance
+        
+        @return  :str  Parsable representation of the instance
+        '''
+        params = (self.red_size, self.green_size, self.blue_size, self.depth, self.filters)
+        return 'libcoopgamma.FilterTable(%s)' % ', '.join(repr(p) for p in params)
 
 
 class ErrorReport:
@@ -367,6 +516,21 @@ class ErrorReport:
         self.custom = custom
         self.server_side = server_side
         self.description = description
+    
+    def clone(self) -> ErrorReport:
+        '''
+        Create a copy of the instance
+        '''
+        return ErrorReport(self.number, self.custom, self.server_side, self.description)
+    
+    def __repr__(self) -> str:
+        '''
+        Create a parsable string representation of the instance
+        
+        @return  :str  Parsable representation of the instance
+        '''
+        params = (self.number, self.custom, self.server_side, self.description)
+        return 'ErrorReport.FilterTable(%s)' % ', '.join(repr(p) for p in params)
 
 
 class Context:
