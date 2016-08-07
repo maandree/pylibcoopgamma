@@ -540,21 +540,228 @@ class Context:
     Use of this structure is not thread-safe, create
     one instance per thread that uses this structure
     
-    @variable  error:ErrorReport  The error of the last failed function call. This
-                                  member is undefined after successful function call.
-    @variable  fd:int             File descriptor for the socket
+    @variable  fd:int  File descriptor for the socket
     '''
     def __init__(self):
         '''
         Constructor
         '''
-        self.error = ErrorReport
         self.fd = None
         self.address = None
     
     def __del__(self):
         '''
         Destructor
+        '''
+        pass
+    
+    def connect(self, method, site : str):
+        '''
+        Connect to a coopgamma server, and start it if necessary
+        
+        Use `del` keyword to disconnect
+        
+        SIGCHLD must not be ignored or blocked
+        
+        All other methods in this class requires that this
+        method has been called successfully
+        
+        @param  method:int|str?  The adjustment method, `None` for automatic
+        @param  site:str?        The site, `None` for automatic
+        '''
+        pass
+    
+    def detach(self):
+        '''
+        After calling this function, communication with the
+        server is impossible, but the connection is not
+        closed and the when the instance is destroyed the
+        connection will remain
+        '''
+        pass
+    
+    def attach(self):
+        '''
+        Undoes the action of `detach`
+        '''
+        pass
+    
+    def set_nonbreaking(self, nonbreaking : bool):
+        '''
+        By default communication is blocking, this function
+        can be used to switch between blocking and nonblocking
+        
+        After setting the communication to nonblocking, `flush`, `synchronise` and
+        and request-sending functions can fail with EAGAIN and EWOULDBLOCK. It is
+        safe to continue with `flush` (for `flush` it selfand equest-sending functions)
+        or `synchronise` just like EINTR failure.
+        
+        @param  nonblocking:bool  Nonblocking mode?
+        '''
+        pass
+    
+    def flush(self):
+        '''
+        Send all pending outbound data
+        
+        If this function or another function that sends a request to the server fails
+        with EINTR, call this function to complete the transfer. The `async` parameter
+        will always be in a properly configured state if a function fails with EINTR.
+        '''
+        pass
+    
+    def synchronise(self, pending : list) -> int:
+        '''
+        Wait for the next message to be received
+        
+        @param   pending:list<AsyncContext>  Information for each pending request
+        @return  :int?                       The index of the element in `pending` which corresponds
+                                             to the first inbound message, note that this only means
+                                             that the message is not for any of the other request,
+                                             if the message is corrupt any of the listed requests can
+                                             be selected even if it is not for any of the requests.
+                                             Functions that parse the message will detect such corruption.
+                                             `None` if the message is ignored, which happens if
+                                             corresponding AsyncContext is not listed.
+        '''
+        pass
+    
+    def skip_message(self):
+        '''
+        Tell the library that you will not be parsing a receive message
+        '''
+        pass
+    
+    def get_crtcs_send(self) -> AsyncContext:
+        '''
+        List all available CRTC:s, send request part
+        
+        @return  :AsyncContext  Information about the request, that is needed to
+                                identify and parse the response
+        '''
+        pass
+    
+    def get_crtcs_recv(self, async : AsyncContext) -> list:
+        '''
+        List all available CRTC:s, receive response part
+        
+        @param   async:AsyncContext  Information about the request
+        @return  :list<str>          A list of names. You should only free the outer
+                                     pointer, inner pointers are subpointers of the
+                                     outer pointer and cannot be freed.
+        '''
+        pass
+    
+    def get_crtcs_sync(self) -> list:
+        '''
+        List all available CRTC:s, synchronous version
+        
+        This is a synchronous request function, as such, you have to ensure that
+        communication is blocking (default), and that there are not asynchronous
+        requests waiting, it also means that EINTR:s are silently ignored and
+        there no wait to cancel the operation without disconnection from the server
+        
+        @return  :list<str>  A list of names. You should only free the outer pointer, inner
+                             pointers are subpointers of the outer pointer and cannot be freed.
+        '''
+        pass
+    
+    def get_gamma_info_send(self, crtc : str) -> AsyncContext:
+        '''
+        Retrieve information about a CRTC:s gamma ramps, send request part
+        
+        @param   crtc:str       The name of the CRT
+        @return  :AsyncContext  Information about the request, that is needed to
+                                identify and parse the response
+        '''
+        pass
+    
+    def get_gamma_info_recv(self, async : AsyncContext) -> CRTCInfo:
+        '''
+        Retrieve information about a CRTC:s gamma ramps, receive response part
+        
+        @param   async:AsyncContext  Information about the request
+        @return  :CRTCInfo           Information about the CRTC
+        '''
+        pass
+    
+    def get_gamma_info_sync(self, crtc : str) -> CRTCInfo:
+        '''
+        Retrieve information about a CRTC:s gamma ramps, synchronous version
+        
+        This is a synchronous request function, as such, you have to ensure that
+        communication is blocking (default), and that there are not asynchronous
+        requests waiting, it also means that EINTR:s are silently ignored and
+        there no wait to cancel the operation without disconnection from the server
+        
+        @param   crtc:str   The name of the CRT
+        @return  :CRTCInfo  Information about the CRTC
+        '''
+        pass
+    
+    def get_gamma_send(self, query : FilterQuery) -> AsyncContext:
+        '''
+        Retrieve the current gamma ramp adjustments, send request part
+        
+        @param   query:FilterQuery  The query to send
+        @return  :AsyncContext      Information about the request, that is
+                                    needed to identify and parse the response
+        '''
+        pass
+    
+    def get_gamma_recv(self, async : AsyncContext) -> FilterTable:
+        '''
+        Retrieve the current gamma ramp adjustments, receive response part
+        
+        @param   async:AsyncContext  Information about the request
+        @return  :FilterTable        Filter table
+        '''
+        pass
+    
+    def get_gamma_sync(self, query : FilterQuery) -> FilterTable:
+        '''
+        Retrieve the current gamma ramp adjustments, synchronous version
+        
+        This is a synchronous request function, as such, you have to ensure that
+        communication is blocking (default), and that there are not asynchronous
+        requests waiting, it also means that EINTR:s are silently ignored and
+        there no wait to cancel the operation without disconnection from the server
+        
+        @param   query:FilterQuery  The query to send
+        @return  :FilterTable       Filter table
+        '''
+        pass
+    
+    def set_gamma_send(self, filtr : Filter) -> AsyncContext:
+        '''
+        Apply, update, or remove a gamma ramp adjustment, send request part
+        
+        @param   filtr:Filter   The filter to apply, update, or remove, gamma ramp
+                                meta-data must match the CRTC's
+        @return  :AsyncContext  Information about the request, that is needed to
+                                identify and parse the response
+        '''
+        pass
+    
+    def set_gamma_recv(self, async : AsyncContext):
+        '''
+        Apply, update, or remove a gamma ramp adjustment, receive response part
+        
+        @param  async:AsyncContext  Information about the request
+        '''
+        pass
+    
+    def set_gamma_sync(self, filtr : Filter):
+        '''
+        Apply, update, or remove a gamma ramp adjustment, synchronous version
+        
+        This is a synchronous request function, as such, you have to ensure that
+        communication is blocking (default), and that there are not asynchronous
+        requests waiting, it also means that EINTR:s are silently ignored and
+        there no wait to cancel the operation without disconnection from the server
+        
+        @param   filtr:Filter  The filter to apply, update, or remove,
+                               gamma ramp meta-data must match the CRTC's
         '''
         pass
 
@@ -574,4 +781,62 @@ class AsyncContext:
         Destructor
         '''
         pass
+
+
+def get_methods() -> list:
+    '''
+    List all recognised adjustment method
+    
+    SIGCHLD must not be ignored or blocked
+    
+    @return  :list<str>  A list of names. You should only free the outer pointer, inner
+                         pointers are subpointers of the outer pointer and cannot be freed.
+    '''
+    pass
+
+
+def get_method_and_site(method, site : str) -> tuple:
+    '''
+    Get the adjustment method and site
+    
+    SIGCHLD must not be ignored or blocked
+    
+    @param   method:int|str?  The adjustment method, `None` for automatic
+    @param   site:str?        The site, `None` for automatic
+    @return  :(:str, :str?)   The selected adjustment method and the selected the
+                              selected site. If the adjustment method only supports
+                              one site or if `site` is `None` and no site can be
+                              selected automatically, the selected site (the second
+                              element in the returned tuple) will be `None`.
+    '''
+    pass
+
+
+def get_pid_file(method, site : str) -> str:
+    '''
+    Get the PID file of the coopgamma server
+    
+    SIGCHLD must not be ignored or blocked
+    
+    @param   method:int|str?  The adjustment method, `None` for automatic
+    @param   site:str?        The site, `None` for automatic
+    @return  :str?            The pathname of the server's PID file.
+                              `None` if the server does not use PID files.
+    '''
+    pass
+
+
+def get_socket_file(method, site : str) -> str:
+    '''
+    Get the socket file of the coopgamma server
+    
+    SIGCHLD must not be ignored or blocked
+    
+    @param   method:int|str?  The adjustment method, `None` for automatic
+    @param   site:str?        The site, `None` for automatic
+    @return  :str?            The pathname of the server's socket, `None` if the server does have
+                              its own socket, which is the case when communicating with a server
+                              in a multi-server display server like mds
+    '''
+    pass
 
