@@ -1,0 +1,246 @@
+# -*- python -*-
+'''
+pylibcoopgamma -- Python library for interfacing with cooperative gamma servers
+Copyright (C) 2016  Mattias Andrée (maandree@kth.se)
+1;2802;0c
+This library is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this library.  If not, see <http://www.gnu.org/licenses/>.
+'''
+cimport cython
+
+from libc.stddef cimport size_t
+from libc.stdlib cimport malloc, free
+from libc.stdint cimport int64_t, uint8_t, uint16_t, uint32_t, uint64_t, intptr_t
+from libc.errno cimport errno
+
+
+
+ctypedef int libcoopgamma_support_t
+# Values used to indicate the support for gamma adjustments
+
+ctypedef int libcoopgamma_depth_t
+# Values used to tell which datatype is used for the gamma ramp stops
+# 
+# The values will always be the number of bits for integral types, and
+# negative for floating-point types
+
+ctypedef int libcoopgamma_lifespan_t
+# Values used to tell when a filter should be removed
+
+ctypedef int libcoopgamma_colourspace_t
+# Colourspaces
+
+
+
+cdef extern from "include-libcoopgamma.h":
+
+    ctypedef struct libcoopgamma_ramps_t:
+    # Gamma ramp structure
+        size_t red_size
+        # The number of stops in the red ramp
+        size_t green_size
+        # The number of stops in the green ramp
+        size_t blue_size
+        # The number of stops in the blue ramp
+        void* red
+        # The red ramp
+        void* green
+        # The green ramp
+        void* blue
+        # The blue ramp
+
+    ctypedef struct libcoopgamma_filter_t:
+    # Data set to the coopgamma server to apply, update, or remove a filter
+        int64_t priority
+        # The priority of the filter, higher priority is applied first.
+        # The gamma correction should have priority 0.
+        char* crtc
+        # The CRTC for which this filter shall be applied
+        char* fclass
+        # Identifier for the filter
+        # 
+        # The syntax must be "${PACKAGE_NAME}::${COMMAND_NAME}::${RULE}"
+        libcoopgamma_lifespan_t lifespan
+        # When shall the filter be removed?
+        # 
+        # If this member's value is `LIBCOOPGAMMA_REMOVE`,
+        # only `.crtc` and `.class` need also be defined
+        libcoopgamma_depth_t depth
+        # The data type and bit-depth of the ramp stops
+        libcoopgamma_ramps_t ramps
+        # The gamma ramp adjustments of the filter
+
+    ctypedef struct libcoopgamma_crtc_info_t:
+    # Gamma ramp meta information for a CRTC
+        int cooperative
+        # Is cooperative gamma server running?
+        libcoopgamma_depth_t depth
+        # The data type and bit-depth of the ramp stops
+$$<cpp <<EOF | tail -n 1 | sed '/#/d'
+#include <limits.h>
+#if INT_MAX != LONG_MAX
+        int padding__
+#endif
+EOF
+$$>
+        size_t red_size
+        # The number of stops in the red ramp
+        size_t green_size
+        # The number of stops in the green ramp
+        size_t blue_size
+        # The number of stops in the blue ramp
+        libcoopgamma_colourspace_t colourspace
+        # The monitor's colurspace
+        int have_gamut
+        # Whether `.red_x`, `.red_y`, `.green_x`, `.green_y`, `.blue_x`, `.blue_y`,
+        # `.white_x`, and `.white_y` are set.
+        # 
+        # If this is true, but the colourspace is not RGB (or sRGB),
+        # there is something wrong. Please also check the colourspace.
+        unsigned red_x
+        # The x-value (CIE xyY) of the monitor's red colour, multiplied by 1024
+        unsigned red_y
+        # The y-value (CIE xyY) of the monitor's red colour, multiplied by 1024
+        unsigned green_x
+        # The x-value (CIE xyY) of the monitor's green colour, multiplied by 1024
+        unsigned green_y
+        # The y-value (CIE xyY) of the monitor's green colour, multiplied by 1024
+        unsigned blue_x
+        # The x-value (CIE xyY) of the monitor's blue colour, multiplied by 1024
+        unsigned blue_y
+        # The y-value (CIE xyY) of the monitor's blue colour, multiplied by 1024
+        unsigned white_x
+        # The x-value (CIE xyY) of the monitor's default white point, multiplied by 1024
+        unsigned white_y
+        # The y-value (CIE xyY) of the monitor's default white point, multiplied by 1024
+
+    ctypedef struct libcoopgamma_filter_query_t:
+    # Data sent to the coopgamma server when requestng the current filter table
+        int64_t high_priority
+        # Do no return filters with higher priority than this value
+        int64_t low_priority
+        # Do no return filters with lower priority than this value
+        char* crtc
+        # The CRTC for which the the current filters shall returned
+        int coalesce
+        # Whether to coalesce all filters into one gamma ramp triplet
+$$<cpp <<EOF | tail -n 1 | sed '/#/d'
+#include <limits.h>
+#if INT_MAX != LONG_MAX
+        int padding__
+#endif
+EOF
+$$>
+
+    ctypedef struct libcoopgamma_queried_filter_t:
+    # Stripped down version of `libcoopgamma_filter` which only contains
+    # the information returned in response to "Command: get-gamma"
+        int64_t priority
+        # The filter's priority
+        char* fclass
+        # The filter's class
+        libcoopgamma_ramps_t ramps
+        # The gamma ramp adjustments of the filter
+
+    ctypedef struct libcoopgamma_filter_table_t:
+    # Response type for "Command: get-gamma": a list of applied filters
+    # and meta-information that was necessary for decoding the response
+        size_t red_size
+        # The number of stops in the red ramp
+        size_t green_size
+        # The number of stops in the green ramp
+        size_t blue_size
+        # The number of stops in the blue ramp
+        size_t filter_count
+        # The number of filters
+        libcoopgamma_queried_filter_t* filters
+        # The filters, should be ordered by priority in descending order,
+        # lest there is something wrong with the coopgamma server
+        # 
+        # If filter coalition was requested, there will be exactly one
+        # filter (`.filter_count == 1`) and `.filters->class == NULL`
+        # and `.filters->priority` is undefined.
+        libcoopgamma_depth_t depth
+        # The data type and bit-depth of the ramp stops
+$$<cpp <<EOF | tail -n 1 | sed '/#/d'
+#include <limits.h>
+#if INT_MAX != LONG_MAX
+        int padding__
+#endif
+EOF
+$$>
+
+    ctypedef struct libcoopgamma_error_t:
+    # Error message from coopgamma server
+        uint64_t number
+        # Error code
+        # 
+        # If `.custom` is false, 0 indicates success, otherwise,
+        # 0 indicates that no error code has been assigned
+        int custom
+        # Is this a custom error?
+        int server_side
+        # Did the error occur on the server-side?
+        char* description
+        # Error message, can be `NULL` if `.custom` is false
+
+    ctypedef struct libcoopgamma_context_t:
+    # Library state
+    # 
+    # Use of this structure is not thread-safe create one instance
+    # per thread that uses this structure
+        libcoopgamma_error_t error
+        # The error of the last failed function call
+        # 
+        # This member is undefined after successful function call
+        int fd
+        # File descriptor for the socket
+        int have_all_headers
+        # Whether `libcoopgamma_synchronise` have read the empty end-of-headers line
+        int bad_message
+        # Whether `libcoopgamma_synchronise` is reading a corrupt but recoverable message
+        int blocking
+        # Is communication blocking?
+        uint32_t message_id
+        # Message ID of the next message
+        uint32_t in_response_to
+        # The ID of outbound message to which the inbound message being read by
+        # `libcoopgamma_synchronise` is a response
+        char* outbound
+        # Buffer with the outbound message
+        size_t outbound_head
+        # The write head for `outbound`
+        size_t outbound_tail
+        # The read head for `outbound`
+        size_t outbound_size
+        # The allocation size of `outbound`
+        char* inbound
+        # Buffer with the inbound message
+        size_t inbound_head
+        # The write head for `inbound`
+        size_t inbound_tail
+        # The read head for `inbound`
+        size_t inbound_size
+        # The allocation size of `inbound`
+        size_t length
+        # The value of 'Length' header in the inbound message
+        size_t curline
+        # The beginning of the current line that is being read by `libcoopgamma_synchronise`
+
+    ctypedef struct libcoopgamma_async_context_t:
+    # Information necessary to identify and parse a response from the server
+        uint32_t message_id
+        # The value of the 'In response to' header in the waited message
+        int coalesce
+        # Whether to coalesce all filters into one gamma ramp triplet
+
