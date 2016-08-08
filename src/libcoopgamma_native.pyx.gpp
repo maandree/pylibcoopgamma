@@ -246,7 +246,7 @@ $$>
 
 
 
-cdef extern int libcoopgamma_ramps_initialise_(void* this, size_t width)
+cdef extern int libcoopgamma_ramps_initialise_(libcoopgamma_ramps_t* this, size_t width)
 '''
 Initialise a `libcoopgamma_ramps_t`
 
@@ -257,7 +257,7 @@ Initialise a `libcoopgamma_ramps_t`
 @return         Zero on success, -1 on error
 '''
 
-cdef extern void libcoopgamma_ramps_destroy(void* this)
+cdef extern void libcoopgamma_ramps_destroy(libcoopgamma_ramps_t* this)
 '''
 Release all resources allocated to  a `libcoopgamma_ramps_t`,
 the allocation of the record itself is not freed
@@ -785,4 +785,261 @@ operation without disconnection from the server
 @return          Zero on success, -1 on error, in which case `ctx->error`
                  (rather than `errno`) is read for information about the error
 '''
+
+
+
+def libcoopgamma_native_get_methods():
+    '''
+    List all recognised adjustment method
+    
+    SIGCHLD must not be ignored or blocked
+    
+    @return  :list<str>|int  Either the value of `errno` (on failure), or (on success) a list
+                             of names. You should only free the outer pointer, inner pointers
+                             are subpointers of the outer pointer and cannot be freed.
+    '''
+    cdef char** methods = libcoopgamma_get_methods()
+    cdef bytes bs
+    if methods is NULL:
+        return int(errno)
+    ret = []
+    i = 0
+    while methods[i] is not NULL:
+        bs = methods[i]
+        ret.append(bs.decode('utf-8', 'strict'))
+    free(methods)
+
+
+def libcoopgamma_native_get_method_and_site(method : str, site : str):
+    '''
+    Get the adjustment method and site
+    
+    SIGCHLD must not be ignored or blocked
+    
+    @param   method:str?         The adjustment method, `None` for automatic
+    @param   site:str?           The site, `None` for automatic
+    @return  :int|(:str, :str?)  Either the value of `errno` (on failure), or (on success)
+                                 the selected adjustment method and the selected the
+                                 selected site. If the adjustment method only supports
+                                 one site or if `site` is `None` and no site can be
+                                 selected automatically, the selected site (the second
+                                 element in the returned tuple) will be `None`.
+    '''
+    cdef char* rcsmethod = NULL
+    cdef char* rcssite = NULL
+    cdef bytes rbsmethod
+    cdef bytes rbssite
+    rmethod, rsite = None, None
+    if libcoopgamma_get_method_and_site(method, site, &rbsmethod, &rbssite) < 0:
+        return int(errno)
+    rbsmethod = rcsmethod
+    rmethod = rbsmethod.decode('utf-8', 'strict')
+    if rcssite is not None:
+        rbssite = rcssite
+        rsite = rbssite.decode('utf-8', 'strict')
+    return (rmethod, rsite)
+
+
+def libcoopgamma_native_get_pid_file(method : str, site : str):
+    '''
+    Get the PID file of the coopgamma server
+    
+    SIGCHLD must not be ignored or blocked
+    
+    @param   method:str?  The adjustment method, `None` for automatic
+    @param   site:str?    The site, `None` for automatic
+    @return  :int|str?    Either the value of `errno` (on failure), or (on success)
+                          the pathname of the server's PID file. `None` if the server
+                          does not use PID files.
+    '''
+    cdef char* path
+    char bytes bs
+    path = libcoopgamma_native_get_pid_file(method, site)
+    if errno != 0 and path is NULL:
+        bs = path
+        return bs.decode('utf-8', 'strict')
+    return int(errno)
+
+
+def libcoopgamma_native_get_socket_file(method : str, site : str):
+    '''
+    Get the socket file of the coopgamma server
+    
+    SIGCHLD must not be ignored or blocked
+    
+    @param   method:int|str?  The adjustment method, `None` for automatic
+    @param   site:str?        The site, `None` for automatic
+    @return  :int|str?        Either the value of `errno` (on failure), or (on success)
+                              the pathname of the server's socket, `None` if the server does have
+                              its own socket, which is the case when communicating with a server
+                              in a multi-server display server like mds
+    '''
+    cdef char* path
+    char bytes bs
+    path = libcoopgamma_native_get_socket_file(method, site)
+    if errno != 0 and path is NULL:
+        bs = path
+        return bs.decode('utf-8', 'strict')
+    return int(errno)
+
+
+def libcoopgamma_native_context_create():
+    '''
+    Create an instance of `libcoopgamma_context_t`
+    
+    @return  :(:bool, :int)  Element 0: Whether the call was successful
+                             Element 1: The value of `errno` on failure, and on
+                                        success, the address of the created instance
+    '''
+    cdef libcoopgamma_context_t* this
+    this = <libcoopgamma_context_t*>malloc(sizeof(*this))
+    if this is None:
+        return (False, int(errno))
+    if libcoopgamma_context_initialise(this) < 0:
+        saved_errno = int(errno)
+        libcoopgamma_context_destroy(this, <int>0)
+        free(this)
+        return (False, saved_errno)
+    return (True, int(<intptr_t><void*>this))
+
+
+def libcoopgamma_native_context_free(address : int):
+    '''
+    Disconnect and free an instance of a `libcoopgamma_context_t`
+    
+    @param  address:int  The address of the `libcoopgamma_context_t` instance
+    '''
+    cdef libcoopgamma_context_t* this = <libcoopgamma_context_t*><void*><intptr_t>address
+    libcoopgamma_context_destroy(this, <int>1)
+    free(this)
+
+
+def libcoopgamma_native_context_marshal(address : int):
+    '''
+    Marshal a `libcoopgamma_context_t` into a buffer
+    
+    @param   address:int  The address of the instance to marshal
+    @return  :int|bytes   Either the value of `errno` (on failure), or (on success)
+                          a byte representation of the instance
+    '''
+    cdef libcoopgamma_context_t* this = <libcoopgamma_context_t*><void*><intptr_t>address
+    cdef size_t n = libcoopgamma_context_marshal(this, NULL)
+    cdef char* buf = <char*>malloc(n)
+    if buf is NULL:
+        return int(errno)
+    libcoopgamma_context_marshal(this, buf)
+    ret = bytes(<int>(char[i]) for i in range(int(n)))
+    free(buf)
+    return ret
+
+
+def libcoopgamma_native_context_unmarshal(buf : bytes):
+    '''
+    Unmarshal a `libcoopgamma_context_t` from a buffer
+    
+    @param   buf:bytes      The buffer with the marshalled instance
+    @return  :(:int, :int)  Element 0: 0 = Success
+                                       1 = Incompatible downgrade
+                                       2 = Incompatible upgrade
+                                       -1 = `errno` is returned
+                            Element 1: If [0] = 0:  The address of the unmarshalled instance
+                                       If [0] = -1: The value of `errno`
+    '''
+    cdef size_t ret1 = 0
+    cdef libcoopgamma_context_t* this
+    this = <libcoopgamma_context_t*>malloc(sizeof(*this))
+    if this is None:
+        return (-1, int(errno))
+    if libcoopgamma_context_initialise(this) < 0:
+        saved_errno = int(errno)
+        libcoopgamma_context_destroy(this)
+        return (-1, int(errno))
+    ret0 = <int>libcoopgamma_context_unmarshal(this, <bytes>buf, &ret1)
+    return (ret0, <int>ret1)
+
+
+def libcoopgamma_native_context_set_fd(address : int, fd : int):
+    '''
+    Set the field for socket file descriptor in a `libcoopgamma_context_t` 
+    
+    @param  address:int  The address of the `libcoopgamma_context_t` instance
+    @param  fd:int       The file descriptor
+    '''
+    cdef libcoopgamma_context_t* this = <libcoopgamma_context_t*><void*><intptr_t>address
+    this->fd = fd
+
+
+def libcoopgamma_native_context_create():
+    '''
+    Create an instance of `libcoopgamma_context_t`
+    
+    @return  :(:bool, :int)  Element 0: Whether the call was successful
+                             Element 1: The value of `errno` on failure, and on
+                                        success, the address of the created instance
+    '''
+    cdef libcoopgamma_context_t* this
+    this = <libcoopgamma_context_t*>malloc(sizeof(*this))
+    if this is None:
+        return (False, int(errno))
+    if libcoopgamma_context_initialise(this) < 0:
+        saved_errno = int(errno)
+        libcoopgamma_context_destroy(this, <int>0)
+        free(this)
+        return (False, saved_errno)
+    return (True, int(<intptr_t><void*>this))
+
+
+def libcoopgamma_native_async_context_free(address : int):
+    '''
+    Free an instance of a `libcoopgamma_async_context_t`
+    
+    @param  address:int  The address of the `libcoopgamma_async_context_t` instance
+    '''
+    cdef libcoopgamma_async_context_t* this = <libcoopgamma_async_context_t*><void*><intptr_t>address
+    libcoopgamma_async_context_destroy(this)
+    free(this)
+
+
+def libcoopgamma_native_async_context_marshal(address : int):
+    '''
+    Marshal a `libcoopgamma_async_context_t` into a buffer
+    
+    @param   address:int  The address of the instance to marshal
+    @return  :int|bytes   Either the value of `errno` (on failure), or (on success)
+                          a byte representation of the instance
+    '''
+    cdef libcoopgamma_async_context_t* this = <libcoopgamma_async_context_t*><void*><intptr_t>address
+    cdef size_t n = libcoopgamma_async_context_marshal(this, NULL)
+    cdef char* buf = <char*>malloc(n)
+    if buf is NULL:
+        return int(errno)
+    libcoopgamma_async_context_marshal(this, buf)
+    ret = bytes(<int>(char[i]) for i in range(int(n)))
+    free(buf)
+    return ret
+
+
+def libcoopgamma_native_async_context_unmarshal(buf : bytes):
+    '''
+    Unmarshal a `libcoopgamma_async_context_t` from a buffer
+    
+    @param   buf:bytes      The buffer with the marshalled instance
+    @return  :(:int, :int)  Element 0: 0 = Success
+                                       1 = Incompatible downgrade
+                                       2 = Incompatible upgrade
+                                       -1 = `errno` is returned
+                            Element 1: If [0] = 0:  The address of the unmarshalled instance
+                                       If [0] = -1: The value of `errno`
+    '''
+    cdef size_t ret1 = 0
+    cdef libcoopgamma_async_context_t* this
+    this = <libcoopgamma_async_context_t*>malloc(sizeof(*this))
+    if this is None:
+        return (-1, int(errno))
+    if libcoopgamma_async_context_initialise(this) < 0:
+        saved_errno = int(errno)
+        libcoopgamma_async_context_destroy(this)
+        return (-1, int(errno))
+    ret0 = <int>libcoopgamma_async_context_unmarshal(this, <bytes>buf, &ret1)
+    return (ret0, <int>ret1)
 

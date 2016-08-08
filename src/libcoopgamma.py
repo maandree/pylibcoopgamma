@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this library.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-import enum
+import enum, libcoopgamma_native
 
 
 class Support(enum.IntEnum):
@@ -542,18 +542,45 @@ class Context:
     
     @variable  fd:int  File descriptor for the socket
     '''
-    def __init__(self):
+    def __init__(self, fd : int = -1, buf : bytes = None):
         '''
         Constructor
+        
+        @param  fd:int      File descriptor for the socket
+        @param  buf:bytes?  Buffer to unmarshal
         '''
-        self.fd = None
-        self.address = None
+        self.fd = fd
+        if buf is None:
+            (successful, value) = libcoopgamma_native.libcoopgamma_native_context_create()
+            if not successful:
+                pass # TODO
+        else:
+            (error, value) = libcoopgamma_native.libcoopgamma_native_context_unmarshal(buf)
+            if error < 0:
+                pass # TODO
+            elif error == 1:
+                pass # TODO LIBCOOPGAMMA_INCOMPATIBLE_DOWNGRADE
+            elif error == 2:
+                pass # TODO LIBCOOPGAMMA_INCOMPATIBLE_UPGRADE
+        self.address = value
     
     def __del__(self):
         '''
         Destructor
         '''
-        pass
+        libcoopgamma_native.libcoopgamma_native_context_free(self.address)
+    
+    def __repr__(self) -> str:
+        '''
+        Create a parsable string representation of the instance
+        
+        @return  :str  Parsable representation of the instance
+        '''
+        data = libcoopgamma_libcoopgamma_native_context_marshal(self.address)
+        if isinstance(data, int):
+            pass # TODO
+        params = (self.fd, data)
+        return 'libcoopgamma.Context(%s)' % ', '.join(repr(p) for p in params)
     
     def connect(self, method, site : str):
         '''
@@ -578,13 +605,13 @@ class Context:
         closed and the when the instance is destroyed the
         connection will remain
         '''
-        pass
+        libcoopgamma_native.libcoopgamma_native_context_set_fd(self.address, -1)
     
     def attach(self):
         '''
         Undoes the action of `detach`
         '''
-        pass
+        libcoopgamma_native.libcoopgamma_native_context_set_fd(self.address, self.fd)
     
     def set_nonbreaking(self, nonbreaking : bool):
         '''
@@ -770,17 +797,42 @@ class AsyncContext:
     '''
     Information necessary to identify and parse a response from the server
     '''
-    def __init__(self):
+    def __init__(self, buf : bytes = None):
         '''
         Constructor
+        
+        @param  buf:bytes?  Buffer to unmarshal
         '''
-        self.address = None
+        if buf is None:
+            (successful, value) = libcoopgamma_native.libcoopgamma_native_async_context_create()
+            if not successful:
+                pass # TODO
+        else:
+            (error, value) = libcoopgamma_native.libcoopgamma_native_async_context_unmarshal(buf)
+            if error < 0:
+                pass # TODO
+            elif error == 1:
+                pass # TODO LIBCOOPGAMMA_INCOMPATIBLE_DOWNGRADE
+            elif error == 2:
+                pass # TODO LIBCOOPGAMMA_INCOMPATIBLE_UPGRADE
+        self.address = value
     
     def __del__(self):
         '''
         Destructor
         '''
-        pass
+        libcoopgamma_native.libcoopgamma_native_async_context_free(self.address)
+    
+    def __repr__(self) -> str:
+        '''
+        Create a parsable string representation of the instance
+        
+        @return  :str  Parsable representation of the instance
+        '''
+        data = libcoopgamma_libcoopgamma_native_async_context_marshal(self.address)
+        if isinstance(data, int):
+            pass # TODO
+        return 'libcoopgamma.AsyncContext(%s)' % repr(data)
 
 
 def get_methods() -> list:
@@ -792,7 +844,10 @@ def get_methods() -> list:
     @return  :list<str>  A list of names. You should only free the outer pointer, inner
                          pointers are subpointers of the outer pointer and cannot be freed.
     '''
-    pass
+    ret = libcoopgamma_native.libcoopgamma_native_get_methods()
+    if isinstance(ret, int):
+        pass # TODO
+    return ret
 
 
 def get_method_and_site(method, site : str) -> tuple:
@@ -809,7 +864,12 @@ def get_method_and_site(method, site : str) -> tuple:
                               selected automatically, the selected site (the second
                               element in the returned tuple) will be `None`.
     '''
-    pass
+    if method is not None:
+        method = str(method)
+    ret = libcoopgamma_native.libcoopgamma_native_get_method_and_site(method, site)
+    if isinstance(ret, int):
+        pass # TODO
+    return ret
 
 
 def get_pid_file(method, site : str) -> str:
@@ -823,7 +883,12 @@ def get_pid_file(method, site : str) -> str:
     @return  :str?            The pathname of the server's PID file.
                               `None` if the server does not use PID files.
     '''
-    pass
+    if method is not None:
+        method = str(method)
+    ret = libcoopgamma_native.libcoopgamma_native_get_pid_file(method, site)
+    if ret is not None and isinstance(ret, int):
+        pass # TODO
+    return ret
 
 
 def get_socket_file(method, site : str) -> str:
@@ -838,5 +903,10 @@ def get_socket_file(method, site : str) -> str:
                               its own socket, which is the case when communicating with a server
                               in a multi-server display server like mds
     '''
-    pass
+    if method is not None:
+        method = str(method)
+    ret = libcoopgamma_native.libcoopgamma_native_get_pid_file(method, site)
+    if ret is not None and isinstance(ret, int):
+        pass # TODO
+    return ret
 
