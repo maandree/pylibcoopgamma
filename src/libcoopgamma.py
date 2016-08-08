@@ -596,7 +596,14 @@ class Context:
         @param  method:int|str?  The adjustment method, `None` for automatic
         @param  site:str?        The site, `None` for automatic
         '''
-        pass
+        if method is not None and isinstance(method, int):
+            method = str(method)
+        error = libcoopgamma_native_connect(method, site, self.address)
+        if error is not None:
+            if errno == 0:
+                pass # TODO server failed to initialise
+            else:
+                pass # TODO
     
     def detach(self):
         '''
@@ -625,7 +632,9 @@ class Context:
         
         @param  nonblocking:bool  Nonblocking mode?
         '''
-        pass
+        error = libcoopgamma_native.libcoopgamma_native_set_nonblocking(self.address, nonbreaking)
+        if error != 0:
+            pass # TODO
     
     def flush(self):
         '''
@@ -635,7 +644,9 @@ class Context:
         with EINTR, call this function to complete the transfer. The `async` parameter
         will always be in a properly configured state if a function fails with EINTR.
         '''
-        pass
+        error = libcoopgamma_native.libcoopgamma_native_flush(self.address)
+        if error != 0:
+            pass # TODO
     
     def synchronise(self, pending : list) -> int:
         '''
@@ -651,13 +662,21 @@ class Context:
                                              `None` if the message is ignored, which happens if
                                              corresponding AsyncContext is not listed.
         '''
-        pass
+        pending = [p.address for p in pending]
+        (successful, value) = libcoopgamma_native.libcoopgamma_native_flush(self.address, pending)
+        if not successful:
+            if error == 0:
+                return None
+            else:
+                pass # TODO
+        else:
+            return value
     
     def skip_message(self):
         '''
         Tell the library that you will not be parsing a receive message
         '''
-        pass
+        libcoopgamma_native.libcoopgamma_native_skip_message(self.address)
     
     def get_crtcs_send(self) -> AsyncContext:
         '''
