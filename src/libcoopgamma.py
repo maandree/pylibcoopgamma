@@ -237,14 +237,14 @@ class Gamut:
     def __init__(self, red : GamutPoint = None, green : GamutPoint = None, blue : GamutPoint = None):
         '''
         Constructor
-    
-        @param  red:GamutPoint    The red stimuli
-        @param  green:GamutPoint  The green stimuli
-        @param  blue:GamutPoint   The blue stimuli
+        
+        @param  red:GamutPoint|(int, int)    The red stimuli
+        @param  green:GamutPoint|(int, int)  The green stimuli
+        @param  blue:GamutPoint|(int, int)   The blue stimuli
         '''
-        self.red   = red
-        self.green = green
-        self.blue  = blue
+        self.red   = GamutPoint(*red)   if isinstance(red,   tuple) else red
+        self.green = GamutPoint(*green) if isinstance(green, tuple) else green
+        self.blue  = GamutPoint(*blue)  if isinstance(blue,  tuple) else blue
     
     def clone(self, shallow = True) -> Gamut:
         '''
@@ -300,7 +300,7 @@ class CRTCInfo:
         @param  green_size:int?          The number of stops in the green ramp
         @param  blue_size:int?           The number of stops in the blue ramp
         @param  colourspace:Colourspace  The monitor's colourspace
-        @param  gamut:Gamut?             Measurements of the monitor's colourspace,
+        @param  gamut:Gamut|tuple?       Measurements of the monitor's colourspace,
                                          `None` if the this information is unavailable
         '''
         self.cooperative = cooperative
@@ -310,7 +310,10 @@ class CRTCInfo:
         self.green_size = green_size
         self.blue_size = blue_size
         self.colourspace = colourspace
-        self.gamut = gamut
+        if gamut is None or isinstance(gamut, Gamut):
+            self.gamut = gamut
+        else:
+            self.gamut = Gamut(*gamut)
     
     def make_ramps(self) -> Ramps:
         '''
@@ -398,13 +401,15 @@ class QueriedFilter:
         '''
         Constructor
         
-        @param  priority:int  The filter's priority. This is a signed 64-bit integer.
-        @param  fclass:str    The filter's class
-        @param  ramps:Ramps   The gamma ramp adjustments of the filter
+        @param  priority:int       The filter's priority. This is a signed 64-bit integer.
+        @param  fclass:str         The filter's class
+        @param  ramps:Ramps|tuple  The gamma ramp adjustments of the filter
         '''
         self.priority = priority
         self.fclass = fclass
-        self.ramps = ramps
+        if ramps is not None:
+            self.ramps = Ramps(*ramps) if isinstance(ramps, tuple) else ramps
+        self.ramps = None
     
     def clone(self, shallow = False) -> QueriedFilter:
         '''
@@ -446,22 +451,22 @@ class FilterTable:
         '''
         Constructor 
         
-        @param  red_size:int                 The number of stops in the red ramp
-        @param  green_size:int               The number of stops in the green ramp
-        @param  blue_size:int                The number of stops in the blue ramp
-        @param  depth:Depth                  The data type and bit-depth of the ramp stops
-        @param  filters:list<QueriedFilter>  The filters, should be ordered by priority
-                                             in descending order, lest there is something
-                                             wrong with the coopgamma server.
-                                             If filter coalition was requested, there will
-                                             be exactly one filter and `filters[0].class`
-                                             and `filters[0].priority` are undefined.
+        @param  red_size:int                       The number of stops in the red ramp
+        @param  green_size:int                     The number of stops in the green ramp
+        @param  blue_size:int                      The number of stops in the blue ramp
+        @param  depth:Depth                        The data type and bit-depth of the ramp stops
+        @param  filters:list<QueriedFilter|tuple>  The filters, should be ordered by priority
+                                                   in descending order, lest there is something
+                                                   wrong with the coopgamma server.
+                                                   If filter coalition was requested, there will
+                                                   be exactly one filter and `filters[0].class`
+                                                   and `filters[0].priority` are undefined.
         '''
         self.red_size   = red_size
         self.green_size = green_size
         self.blue_size  = blue_size
         self.depth      = depth
-        self.filters    = filters
+        self.filters    = list(QueriedFilter(*f) if isinstance(f, tuple) else f for f in filters)
     
     def make_ramps(self) -> Ramps:
         '''
@@ -576,7 +581,7 @@ class Context:
         
         @return  :str  Parsable representation of the instance
         '''
-        data = libcoopgamma_libcoopgamma_native_context_marshal(self.address)
+        data = libcoopgamma_native.libcoopgamma_native_context_marshal(self.address)
         if isinstance(data, int):
             pass # TODO
         params = (self.fd, data)
@@ -598,7 +603,7 @@ class Context:
         '''
         if method is not None and isinstance(method, int):
             method = str(method)
-        error = libcoopgamma_native_connect(method, site, self.address)
+        error = llibcoopgamma_native.ibcoopgamma_native_connect(method, site, self.address)
         if error is not None:
             if errno == 0:
                 pass # TODO server failed to initialise
@@ -685,7 +690,12 @@ class Context:
         @return  :AsyncContext  Information about the request, that is needed to
                                 identify and parse the response
         '''
-        pass
+        async = AsyncContext()
+        error = libcoopgamma_native.libcoopgamma_native_get_crtcs_send(self.address, async.address)
+        if error != 0:
+            del async
+            pass # TODO
+        return async
     
     def get_crtcs_recv(self, async : AsyncContext) -> list:
         '''
@@ -696,7 +706,10 @@ class Context:
                                      pointer, inner pointers are subpointers of the
                                      outer pointer and cannot be freed.
         '''
-        pass
+        ret = libcoopgamma_native.libcoopgamma_native_get_crtcs_recv(self.address, async.address)
+        if isinstance(ret, int):
+            pass # TODO
+        return ret
     
     def get_crtcs_sync(self) -> list:
         '''
@@ -710,7 +723,10 @@ class Context:
         @return  :list<str>  A list of names. You should only free the outer pointer, inner
                              pointers are subpointers of the outer pointer and cannot be freed.
         '''
-        pass
+        ret = libcoopgamma_native.libcoopgamma_native_get_crtcs_sync(self.address)
+        if isinstance(ret, int):
+            pass # TODO
+        return ret
     
     def get_gamma_info_send(self, crtc : str) -> AsyncContext:
         '''
@@ -720,7 +736,13 @@ class Context:
         @return  :AsyncContext  Information about the request, that is needed to
                                 identify and parse the response
         '''
-        pass
+        async = AsyncContext()
+        (successful, value) = libcoopgamma_native.libcoopgamma_native_get_gamma_info_send(
+                                  crtc, self.address, async.address)
+        if successful:
+            del async
+            pass # TODO
+        return async
     
     def get_gamma_info_recv(self, async : AsyncContext) -> CRTCInfo:
         '''
@@ -729,7 +751,13 @@ class Context:
         @param   async:AsyncContext  Information about the request
         @return  :CRTCInfo           Information about the CRTC
         '''
-        pass
+        value = libcoopgamma_native.libcoopgamma_native_get_gamma_info_send(self.address, async.address)
+        if isinstance(value, int):
+            pass # TODO
+        (successful, value) = value
+        if successful:
+            pass # TODO
+        return CRTCInfo(*value)
     
     def get_gamma_info_sync(self, crtc : str) -> CRTCInfo:
         '''
@@ -743,7 +771,13 @@ class Context:
         @param   crtc:str   The name of the CRT
         @return  :CRTCInfo  Information about the CRTC
         '''
-        pass
+        value = libcoopgamma_native.libcoopgamma_native_get_gamma_info_sync(crtc, self.address, async.address)
+        if isinstance(value, int):
+            pass # TODO
+        (successful, value) = value
+        if successful:
+            pass # TODO
+        return CRTCInfo(*value)
     
     def get_gamma_send(self, query : FilterQuery) -> AsyncContext:
         '''
@@ -753,7 +787,13 @@ class Context:
         @return  :AsyncContext      Information about the request, that is
                                     needed to identify and parse the response
         '''
-        pass
+        async = AsyncContext()
+        (successful, value) = libcoopgamma_native.libcoopgamma_native_get_gamma_send(
+                                  query, self.address, async.address)
+        if successful:
+            del async
+            pass # TODO
+        return async
     
     def get_gamma_recv(self, async : AsyncContext) -> FilterTable:
         '''
@@ -762,7 +802,13 @@ class Context:
         @param   async:AsyncContext  Information about the request
         @return  :FilterTable        Filter table
         '''
-        pass
+        value = libcoopgamma_native.libcoopgamma_native_get_gamma_send(self.address, async.address)
+        if isinstance(value, int):
+            pass # TODO
+        (successful, value) = value
+        if successful:
+            pass # TODO
+        return FilterTable:(*value)
     
     def get_gamma_sync(self, query : FilterQuery) -> FilterTable:
         '''
@@ -776,7 +822,13 @@ class Context:
         @param   query:FilterQuery  The query to send
         @return  :FilterTable       Filter table
         '''
-        pass
+        value = libcoopgamma_native.libcoopgamma_native_get_gamma_sync(query, self.address, async.address)
+        if isinstance(value, int):
+            pass # TODO
+        (successful, value) = value
+        if successful:
+            pass # TODO
+        return FilterTable(*value)
     
     def set_gamma_send(self, filtr : Filter) -> AsyncContext:
         '''
@@ -787,7 +839,12 @@ class Context:
         @return  :AsyncContext  Information about the request, that is needed to
                                 identify and parse the response
         '''
-        pass
+        async = AsyncContext()
+        error = libcoopgamma_native.libcoopgamma_native_set_gamma_send(filtr, self.address, async.address)
+        if error != 0:
+            del async
+            pass # TODO
+        return async
     
     def set_gamma_recv(self, async : AsyncContext):
         '''
@@ -795,7 +852,9 @@ class Context:
         
         @param  async:AsyncContext  Information about the request
         '''
-        pass
+        error = libcoopgamma_native.libcoopgamma_native_set_gamma_recv(self.address, async.address)
+        if error is not None:
+            pass # TODO
     
     def set_gamma_sync(self, filtr : Filter):
         '''
@@ -809,7 +868,9 @@ class Context:
         @param   filtr:Filter  The filter to apply, update, or remove,
                                gamma ramp meta-data must match the CRTC's
         '''
-        pass
+        error = libcoopgamma_native.libcoopgamma_native_set_gamma_sync(filtr, self.address)
+        if error is not None:
+            pass # TODO
 
 
 class AsyncContext:
@@ -848,7 +909,7 @@ class AsyncContext:
         
         @return  :str  Parsable representation of the instance
         '''
-        data = libcoopgamma_libcoopgamma_native_async_context_marshal(self.address)
+        data = libcoopgamma_native.libcoopgamma_native_async_context_marshal(self.address)
         if isinstance(data, int):
             pass # TODO
         return 'libcoopgamma.AsyncContext(%s)' % repr(data)

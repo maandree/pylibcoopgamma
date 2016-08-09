@@ -85,6 +85,10 @@ cdef extern from "include-libcoopgamma.h":
         int cooperative
         # Is cooperative gamma server running?
         libcoopgamma_depth_t depth
+        # Is gamma adjustments supported on the CRTC?
+        # If not, `.depth`, `.red_size`, `.green_size`,
+        # and `.blue_size` are undefined 
+        libcoopgamma_support_t supported
         # The data type and bit-depth of the ramp stops
 $$<cpp <<EOF | tail -n 1 | sed '/#/d'
 #include <limits.h>
@@ -745,18 +749,18 @@ operation without disconnection from the server
                 (rather than `errno`) is read for information about the error
 '''
 
-cdef extern int libcoopgamma_set_gamma_send(const libcoopgamma_filter_t* filter, libcoopgamma_context_t* ctx,
+cdef extern int libcoopgamma_set_gamma_send(const libcoopgamma_filter_t* filtr, libcoopgamma_context_t* ctx,
                                             libcoopgamma_async_context_t* async)
 '''
 Apply, update, or remove a gamma ramp adjustment, send request part
 
 Cannot be used before connecting to the server
 
-@param   filter  The filter to apply, update, or remove, gamma ramp meta-data must match the CRTC's
-@param   ctx     The state of the library, must be connected
-@param   async   Information about the request, that is needed to
-                 identify and parse the response, is stored here
-@return          Zero on success, -1 on error
+@param   filtr  The filter to apply, update, or remove, gamma ramp meta-data must match the CRTC's
+@param   ctx    The state of the library, must be connected
+@param   async  Information about the request, that is needed to
+                identify and parse the response, is stored here
+@return         Zero on success, -1 on error
 '''
 
 cdef extern int libcoopgamma_set_gamma_recv(libcoopgamma_context_t* ctx, libcoopgamma_async_context_t* async)
@@ -769,7 +773,7 @@ Apply, update, or remove a gamma ramp adjustment, receive response part
                 (rather than `errno`) is read for information about the error
 '''
 
-cdef extern int libcoopgamma_set_gamma_sync(const libcoopgamma_filter_t* filter, libcoopgamma_context_t* ctx)
+cdef extern int libcoopgamma_set_gamma_sync(const libcoopgamma_filter_t* filtr, libcoopgamma_context_t* ctx)
 '''
 Apply, update, or remove a gamma ramp adjustment, synchronous version
 
@@ -780,10 +784,10 @@ requests waiting, it also means that EINTR:s are
 silently ignored and there no wait to cancel the
 operation without disconnection from the server
 
-@param   filter  The filter to apply, update, or remove, gamma ramp meta-data must match the CRTC's
-@param   ctx     The state of the library, must be connected
-@return          Zero on success, -1 on error, in which case `ctx->error`
-                 (rather than `errno`) is read for information about the error
+@param   filtr  The filter to apply, update, or remove, gamma ramp meta-data must match the CRTC's
+@param   ctx    The state of the library, must be connected
+@return         Zero on success, -1 on error, in which case `ctx->error`
+                (rather than `errno`) is read for information about the error
 '''
 
 
@@ -834,7 +838,7 @@ def libcoopgamma_native_get_method_and_site(method : str, site : str):
         return int(errno)
     rbsmethod = rcsmethod
     rmethod = rbsmethod.decode('utf-8', 'strict')
-    if rcssite is not None:
+    if rcssite is not NULL:
         rbssite = rcssite
         rsite = rbssite.decode('utf-8', 'strict')
     return (rmethod, rsite)
@@ -948,7 +952,7 @@ def libcoopgamma_native_context_unmarshal(buf : bytes):
     cdef size_t ret1 = 0
     cdef libcoopgamma_context_t* this
     this = <libcoopgamma_context_t*>malloc(sizeof(*this))
-    if this is None:
+    if this is NULL:
         return (-1, int(errno))
     if libcoopgamma_context_initialise(this) < 0:
         saved_errno = int(errno)
@@ -979,7 +983,7 @@ def libcoopgamma_native_context_create():
     '''
     cdef libcoopgamma_context_t* this
     this = <libcoopgamma_context_t*>malloc(sizeof(*this))
-    if this is None:
+    if this is NULL:
         return (False, int(errno))
     if libcoopgamma_context_initialise(this) < 0:
         saved_errno = int(errno)
@@ -1034,7 +1038,7 @@ def libcoopgamma_native_async_context_unmarshal(buf : bytes):
     cdef size_t ret1 = 0
     cdef libcoopgamma_async_context_t* this
     this = <libcoopgamma_async_context_t*>malloc(sizeof(*this))
-    if this is None:
+    if this is NULL:
         return (-1, int(errno))
     if libcoopgamma_async_context_initialise(this) < 0:
         saved_errno = int(errno)
@@ -1118,12 +1122,15 @@ def libcoopgamma_native_synchronise(address : int, pending : list):
     cdef libcoopgamma_async_context_t* pends
     cdef size_t selected = 0
     pends = <libcoopgamma_async_context_t*>malloc(n * sizeof(*pends))
-    if pends is None:
-        pass
+    if pends is NULL:
+        return (False, int(errno))
     for i in range(len(pending)):
         pends[i] = *<libcoopgamma_async_context_t*><void*><intptr_t>pendings[i]
     if libcoopgamma_synchronise(ctx, pends, <size_t>len(pending), &selected) < 0:
-        return (False, int(errno))
+        saved_errno = int(errno)
+        free(pends)
+        return (False, saved_errno)
+    free(pends)
     return (True, <int>selected)
 
 
@@ -1134,4 +1141,516 @@ def libcoopgamma_native_skip_message(address : int):
     @param  address:int  The address of the state of the library, must be connected
     '''
     libcoopgamma_skip_message(<libcoopgamma_context_t*><void*><intptr_t>address)
+
+
+def libcoopgamma_native_get_crtcs_send(address : int, async : int):
+    '''
+    List all available CRTC:s, send request part
+    
+    @param   address:int  The address of the state of the library, must be connected
+    @param   async:int    The address of the `AsyncContext` for the request
+    @return  :int         Zero on success, the value of `errno` on failure
+    '''
+    cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
+    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
+    if libcoopgamma_get_crtcs_send(ctx, actx) < 0:
+        return int(errno)
+    return 0
+
+
+def libcoopgamma_native_get_crtcs_recv(address : int, async : int):
+    '''
+    List all available CRTC:s, receive response part
+    
+    @param   address:int     The address of the state of the library, must be connected
+    @param   async:int       The address of the `AsyncContext` for the request
+    @return  :int|list<str>  The value of `errno` (on failure), or (on success)
+                             a list of the names of the available CRTC:s
+    '''
+    cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
+    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
+    cdef char** crtcs = libcoopgamma_get_crtcs_recv(ctx, actx)
+    cdef bytes bs
+    if crtcs is NULL:
+        return int(errno)
+    ret, i = [], 0
+    while crtcs[i] is not NULL:
+        bs = crtcs[i]
+        ret.append(bs.decode('utf-8', 'strict'))
+        i += 1
+    free(crtcs)
+    return ret
+
+
+def libcoopgamma_native_get_crtcs_sync(address : int):
+    '''
+    List all available CRTC:s, synchronous version
+    
+    This is a synchronous request function, as such,
+    you have to ensure that communication is blocking
+    (default), and that there are not asynchronous
+    requests waiting, it also means that EINTR:s are
+    silently ignored and there no wait to cancel the
+    operation without disconnection from the server
+    
+    @param   address:int     The address of the state of the library, must be connected
+    @return  :int|list<str>  The value of `errno` (on failure), or (on success)
+                             a list of the names of the available CRTC:s
+    '''
+    cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
+    cdef char** crtcs = libcoopgamma_get_crtcs_sync(ctxactx)
+    cdef bytes bs
+    if crtcs is NULL:
+        return int(errno)
+    ret, i = [], 0
+    while crtcs[i] is not NULL:
+        bs = crtcs[i]
+        ret.append(bs.decode('utf-8', 'strict'))
+        i += 1
+    free(crtcs)
+    return ret
+
+
+def libcoopgamma_native_get_gamma_info_send(crtc : str, address : int, async : int):
+    '''
+    Retrieve information about a CRTC:s gamma ramps, send request part
+    
+    Cannot be used before connecting to the server
+    
+    @param   crtc:crtc    The name of the CRTC
+    @param   address:int  The address of the state of the library, must be connected
+    @param   async:int    The address of the information about the request, that is
+                          needed to identify and parse the response, is stored here
+    @return  :int         Zero on success, the value of `errno` on error
+    '''
+    cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
+    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
+    cdef bytes ccrtc = crtc.encode('utf-8')
+    if libcoopgamma_get_gamma_info_send(<char*>ccrtc, ctx, actx) < 0:
+        return int(errno)
+    return 0
+
+
+def libcoopgamma_native_get_gamma_info_recv(address : int, async : int):
+    '''
+    Retrieve information about a CRTC:s gamma ramps, receive response part
+    
+    @param   address:int           The address of the state of the library, must be connected 
+    @param   async:int             The address of the information about the request
+    @return  :int|(:bool, :tuple)  The value of `errno` (on failure) or:
+                                   Element 0: whether the call was successful
+                                   Element 1: tuple with the data for the structure response (possibly error)
+    '''
+    cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
+    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
+    cdef libcoopgamma_crtc_info_t info
+    if libcoopgamma_crtc_info_initialise(&info) < 0:
+        return int(errno)
+    if libcoopgamma_get_gamma_info_recv(&info, ctx, actx) < 0:
+        desc = None
+        if ctx->error.description is not NULL:
+            cdef bytes bs = ctx->error.description
+            desc = bs.decode('utf-8', 'strict')
+        ret = (False, (int(ctx->error.number), ctx->error.custom != 0, ctx->error.server_side != 0, desc))
+    else:
+        ret = (True, (info.cooperative != 0, int(info.depth), int(info.supported), int(info.red_size),
+                      int(info.green_size), int(info.blue_size), int(info.colourspace),
+                      None if info.have_gamut == 0 else ((info.red_x, info.red_y),
+                                                         (info.green_x, info.green_y),
+                                                         (info.blue_x, info.blue_y),
+                                                         (info.white_x, info.white_y))))
+    libcoopgamma_crtc_info_destroy(&info)
+    return ret
+
+
+def libcoopgamma_native_get_gamma_info_sync(crtc : str, address : int):
+    '''
+    Retrieve information about a CRTC:s gamma ramps, synchronous version
+    
+    This is a synchronous request function, as such, you have to ensure that
+    communication is blocking (default), and that there are not asynchronous
+    requests waiting, it also means that EINTR:s are silently ignored and
+    there no wait to cancel the operation without disconnection from the server
+    
+    @param   crtc:str              The name of the CRTC
+    @param   address:int           The address of the state of the library, must be connected
+    @return  :int|(:bool, :tuple)  The value of `errno` (on failure) or:
+                                   Element 0: whether the call was successful
+                                   Element 1: tuple with the data for the structure response (possibly error)
+    '''
+    cdef bytes ccrtc = crtc.encode('utf-8')
+    cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
+    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
+    cdef libcoopgamma_crtc_info_t info
+    if libcoopgamma_crtc_info_initialise(&info) < 0:
+        return int(errno)
+    if libcoopgamma_get_gamma_info_sync(<char*>ccrtc, &info, ctx, actx) < 0:
+        desc = None
+        if ctx->error.description is not NULL:
+            cdef bytes bs = ctx->error.description
+            desc = bs.decode('utf-8', 'strict')
+        ret = (False, (int(ctx->error.number), ctx->error.custom != 0, ctx->error.server_side != 0, desc))
+    else:
+        ret = (True, (info.cooperative != 0, int(info.depth), int(info.supported), int(info.red_size),
+                      int(info.green_size), int(info.blue_size), int(info.colourspace),
+                      None if info.have_gamut == 0 else ((info.red_x, info.red_y),
+                                                         (info.green_x, info.green_y),
+                                                         (info.blue_x, info.blue_y),
+                                                         (info.white_x, info.white_y))))
+    libcoopgamma_crtc_info_destroy(&info)
+    return ret
+
+
+def libcoopgamma_native_get_gamma_send(query, address : int, async : int):
+    
+    '''
+    Retrieve the current gamma ramp adjustments, send request part
+    
+    Cannot be used before connecting to the server
+    
+    @param   query:Query  The query to send
+    @param   address:int  The address of the state of the library, must be connected
+    @param   async:int    The address of the information about the request, that is
+                          needed to identify and parse the response, is stored here
+    @return               Zero on success, the value of `errno` on failure
+    '''
+    cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
+    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
+    cdef libcoopgamma_filter_query_t qry
+    crtc_bs = crtc.encode('utf-8') + bytes([0])
+    qry.high_priority = <int64_t>(query.high_priority)
+    qry.low_priority = <int64_t>(query.low_priority)
+    qry.coalesce = <int>(query.coalesce)
+    qry.crtc = <char*>malloc(len(crtc_bs) * sizeof(char))
+    if qry.crtc is NULL:
+        return int(errno)
+    for i in range(len(crtc_bs)):
+        qry.crtc[i] = <char>(crtc_bs[i])
+    if libcoopgamma_get_gamma_send(&qry, ctx, actx) < 0:
+        saved_errno = int(errno)
+        free(qry.crtc)
+        return saved_errno
+    free(qry.crtc)
+    return 0
+    
+
+def libcoopgamma_native_get_gamma_recv(address : int, async : int):
+    '''
+    Retrieve the current gamma ramp adjustments, receive response part
+    
+    @param   address:int           The address of the state of the library, must be connected
+    @param   async:int             The address of the information about the request
+    @return  :int|(:bool, :tuple)  The value of `errno` (on failure) or:
+                                   Element 0: whether the call was successful
+                                   Element 1: tuple with the data for the structure response (possibly error)
+    '''
+    cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
+    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
+    cdef libcoopgamma_filter_table_t table
+    if libcoopgamma_filter_table_initialise(&table) < 0:
+        return int(errno)
+    if libcoopgamma_get_gamma_recv(&info, ctx, actx) < 0:
+        desc = None
+        if ctx->error.description is not NULL:
+            cdef bytes bs = ctx->error.description
+            desc = bs.decode('utf-8', 'strict')
+        ret = (False, (int(ctx->error.number), ctx->error.custom != 0, ctx->error.server_side != 0, desc))
+    else:
+        filters = [None] * int(table.filter_count)
+        for i in range(int(table.filter_count)):
+            cdef libcoopgamma_ramps_t* rampsp = &(table.filters[i].fclass.ramps)
+            cdef bytes fclass = table.filters[i].fclass
+            red   = [None] * rampsp->red_size
+            green = [None] * rampsp->green_size
+            blue  = [None] * rampsp->blue_size
+            if table.depth == -2:
+                cdef double* r = <double*>(rampsp->red)
+                cdef double* g = <double*>(rampsp->green)
+                cdef double* b = <double*>(rampsp->blue)
+                for i in range(rampsp->red_size):
+                    red[i] = r[i]
+                for i in range(rampsp->green_size):
+                    green[i] = r[i]
+                for i in range(rampsp->blue_size):
+                    blue[i] = r[i]
+            elif table.depth == -1:
+                cdef float* r = <float*>(rampsp->red)
+                cdef float* g = <float*>(rampsp->green)
+                cdef float* b = <float*>(rampsp->blue)
+                for i in range(rampsp->red_size):
+                    red[i] = r[i]
+                for i in range(rampsp->green_size):
+                    green[i] = r[i]
+                for i in range(rampsp->blue_size):
+                    blue[i] = r[i]
+            elif table.depth == 8:
+                cdef uint8_t* r = <uint8_t*>(rampsp->red)
+                cdef uint8_t* g = <uint8_t*>(rampsp->green)
+                cdef uint8_t* b = <uint8_t*>(rampsp->blue)
+                for i in range(rampsp->red_size):
+                    red[i] = r[i]
+                for i in range(rampsp->green_size):
+                    green[i] = r[i]
+                for i in range(rampsp->blue_size):
+                    blue[i] = r[i]
+            elif table.depth == 16:
+                cdef uint16_t* r = <uint16_t*>(rampsp->red)
+                cdef uint16_t* g = <uint16_t*>(rampsp->green)
+                cdef uint16_t* b = <uint16_t*>(rampsp->blue)
+                for i in range(rampsp->red_size):
+                    red[i] = r[i]
+                for i in range(rampsp->green_size):
+                    green[i] = r[i]
+                for i in range(rampsp->blue_size):
+                    blue[i] = r[i]
+            elif table.depth == 32:
+                cdef uint32_t* r = <uint32_t*>(rampsp->red)
+                cdef uint32_t* g = <uint32_t*>(rampsp->green)
+                cdef uint32_t* b = <uint32_t*>(rampsp->blue)
+                for i in range(rampsp->red_size):
+                    red[i] = r[i]
+                for i in range(rampsp->green_size):
+                    green[i] = r[i]
+                for i in range(rampsp->blue_size):
+                    blue[i] = r[i]
+            elif table.depth == 64:
+                cdef uint64_t* r = <uint64_t*>(rampsp->red)
+                cdef uint64_t* g = <uint64_t*>(rampsp->green)
+                cdef uint64_t* b = <uint64_t*>(rampsp->blue)
+                for i in range(rampsp->red_size):
+                    red[i] = r[i]
+                for i in range(rampsp->green_size):
+                    green[i] = r[i]
+                for i in range(rampsp->blue_size):
+                    blue[i] = r[i]
+            ramps = (rampsp->red_size, rampsp->green_size, rampsp->blue_size, red, green, blue)
+            filters[i] = (int(table.filters[i].priority), fclass.decode('utf-8', 'strict'), ramps)
+        ret = (True, (int(table.red_size), int(table.green_size), int(table.blue_size),
+                      int(table.colourspace), int(table.depth), filters))
+    libcoopgamma_filter_table_destroy(&table)
+    return ret
+
+
+def libcoopgamma_native_get_gamma_sync(query, address : int):
+    '''
+    Retrieve the current gamma ramp adjustments, synchronous version
+    
+    This is a synchronous request function, as such, you have to ensure that
+    communication is blocking (default), and that there are not asynchronous
+    requests waiting, it also means that EINTR:s are silently ignored and
+    there no wait to cancel the operation without disconnection from the server
+    
+    @param   query:Query           The query to send
+    @param   address:int           The address of the state of the library, must be connected
+    @return  :int|(:bool, :tuple)  The value of `errno` (on failure) or:
+                                   Element 0: whether the call was successful
+                                   Element 1: tuple with the data for the structure response (possibly error)
+    '''
+    cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
+    cdef libcoopgamma_filter_table_t table
+    cdef libcoopgamma_filter_query_t qry
+    crtc_bs = crtc.encode('utf-8') + bytes([0])
+    qry.high_priority = <int64_t>(query.high_priority)
+    qry.low_priority = <int64_t>(query.low_priority)
+    qry.coalesce = <int>(query.coalesce)
+    qry.crtc = <char*>malloc(len(crtc_bs) * sizeof(char))
+    if qry.crtc is NULL:
+        return int(errno)
+    for i in range(len(crtc_bs)):
+        qry.crtc[i] = <char>(crtc_bs[i])
+    if libcoopgamma_filter_table_initialise(&table) < 0:
+        saved_errno = int(errno)
+        free(qry.crtc)
+        return saved_errno
+    if libcoopgamma_get_gamma_sync(&qry, &info, ctx) < 0:
+        desc = None
+        if ctx->error.description is not NULL:
+            cdef bytes bs = ctx->error.description
+            desc = bs.decode('utf-8', 'strict')
+        ret = (False, (int(ctx->error.number), ctx->error.custom != 0, ctx->error.server_side != 0, desc))
+    else:
+        filters = [None] * int(table.filter_count)
+        for i in range(int(table.filter_count)):
+            cdef libcoopgamma_ramps_t* rampsp = &(table.filters[i].fclass.ramps)
+            cdef bytes fclass = table.filters[i].fclass
+            red   = [None] * rampsp->red_size
+            green = [None] * rampsp->green_size
+            blue  = [None] * rampsp->blue_size
+            if table.depth == -2:
+                cdef double* r = <double*>(rampsp->red)
+                cdef double* g = <double*>(rampsp->green)
+                cdef double* b = <double*>(rampsp->blue)
+                for i in range(rampsp->red_size):
+                    red[i] = r[i]
+                for i in range(rampsp->green_size):
+                    green[i] = r[i]
+                for i in range(rampsp->blue_size):
+                    blue[i] = r[i]
+            elif table.depth == -1:
+                cdef float* r = <float*>(rampsp->red)
+                cdef float* g = <float*>(rampsp->green)
+                cdef float* b = <float*>(rampsp->blue)
+                for i in range(rampsp->red_size):
+                    red[i] = r[i]
+                for i in range(rampsp->green_size):
+                    green[i] = r[i]
+                for i in range(rampsp->blue_size):
+                    blue[i] = r[i]
+            elif table.depth == 8:
+                cdef uint8_t* r = <uint8_t*>(rampsp->red)
+                cdef uint8_t* g = <uint8_t*>(rampsp->green)
+                cdef uint8_t* b = <uint8_t*>(rampsp->blue)
+                for i in range(rampsp->red_size):
+                    red[i] = r[i]
+                for i in range(rampsp->green_size):
+                    green[i] = r[i]
+                for i in range(rampsp->blue_size):
+                    blue[i] = r[i]
+            elif table.depth == 16:
+                cdef uint16_t* r = <uint16_t*>(rampsp->red)
+                cdef uint16_t* g = <uint16_t*>(rampsp->green)
+                cdef uint16_t* b = <uint16_t*>(rampsp->blue)
+                for i in range(rampsp->red_size):
+                    red[i] = r[i]
+                for i in range(rampsp->green_size):
+                    green[i] = r[i]
+                for i in range(rampsp->blue_size):
+                    blue[i] = r[i]
+            elif table.depth == 32:
+                cdef uint32_t* r = <uint32_t*>(rampsp->red)
+                cdef uint32_t* g = <uint32_t*>(rampsp->green)
+                cdef uint32_t* b = <uint32_t*>(rampsp->blue)
+                for i in range(rampsp->red_size):
+                    red[i] = r[i]
+                for i in range(rampsp->green_size):
+                    green[i] = r[i]
+                for i in range(rampsp->blue_size):
+                    blue[i] = r[i]
+            elif table.depth == 64:
+                cdef uint64_t* r = <uint64_t*>(rampsp->red)
+                cdef uint64_t* g = <uint64_t*>(rampsp->green)
+                cdef uint64_t* b = <uint64_t*>(rampsp->blue)
+                for i in range(rampsp->red_size):
+                    red[i] = r[i]
+                for i in range(rampsp->green_size):
+                    green[i] = r[i]
+                for i in range(rampsp->blue_size):
+                    blue[i] = r[i]
+            ramps = (rampsp->red_size, rampsp->green_size, rampsp->blue_size, red, green, blue)
+            filters[i] = (int(table.filters[i].priority), fclass.decode('utf-8', 'strict'), ramps)
+        ret = (True, (int(table.red_size), int(table.green_size), int(table.blue_size),
+                      int(table.colourspace), int(table.depth), filters))
+    libcoopgamma_filter_table_destroy(&table)
+    return ret
+
+
+def libcoopgamma_native_set_gamma_send(filtr, address : int, async : int):
+    '''
+    Apply, update, or remove a gamma ramp adjustment, send request part
+    
+    Cannot be used before connecting to the server
+    
+    @param   filtr:Filter  The filter to apply, update, or remove, gamma ramp
+                           meta-data must match the CRTC's
+    @param   address:int   The address of the state of the library, must be connected
+    @param   async:int     The address of the information about the request, that is needed to
+                           identify and parse the response, is stored here
+    @return  :int          Zero on success, the value of `errno` on failure
+    '''
+    cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
+    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
+    cdef libcoopgamma_filter_t flr
+    crtc_bs = filtr.crtc.encode('utf-8') + bytes([0])
+    clss_bs = filtr.fclass.encode('utf-8') + bytes([0])
+    flr.priority = <int64_t>(filtr.priority)
+    flr.lifespan = <libcoopgamma_lifespan_t>(filtr.lifespan)
+    flr.depth = <libcoopgamma_depth_t>(filtr.depth)
+    flr.crtc = <char*>malloc(len(crtc_bs) * sizeof(char))
+    if flr.crtc is NULL:
+        return int(errno)
+    flr.fclass = <char*>malloc(len(clss_bs) * sizeof(char))
+    if flr.fclass is NULL:
+        saved_errno = int(errno)
+        free(flr.crtc)
+        return saved_errno
+    for i in range(len(crtc_bs)):
+        flr.crtc[i] = <char>(crtc_bs[i])
+    for i in range(len(clss_bs)):
+        flr.fclass[i] = <char>(clss_bs[i])
+    if libcoopgamma_set_gamma_send(&flr, ctx, actx) < 0:
+        saved_errno = int(errno)
+        free(flr.crtc)
+        free(flr.fclass)
+        return saved_errno
+    free(flr.crtc)
+    return 0
+
+
+def libcoopgamma_native_set_gamma_recv(address : int, async : int):
+    '''
+    Apply, update, or remove a gamma ramp adjustment, receive response part
+    
+    @param   address:int  The address of the state of the library, must be connected
+    @param   async:int    The address of the information about the request
+    @return  :tuple?      The value of `errno` (on failure) or:
+                          Element 0: whether the call was successful
+                          Element 1: tuple with the data for the structure response (possibly error)
+    '''
+    cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
+    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
+    if libcoopgamma_set_gamma_recv(&ctx, &actx) < 0:
+        desc = None
+        if ctx->error.description is not NULL:
+            cdef bytes bs = ctx->error.description
+            desc = bs.decode('utf-8', 'strict')
+        return (int(ctx->error.number), ctx->error.custom != 0, ctx->error.server_side != 0, desc)
+    return None
+
+
+def libcoopgamma_native_set_gamma_sync(filtr, address : int):
+    '''
+    Apply, update, or remove a gamma ramp adjustment, synchronous version
+    
+    This is a synchronous request function, as such, you have to ensure that
+    communication is blocking (default), and that there are not asynchronous
+    requests waiting, it also means that EINTR:s are silently ignored and
+    there no wait to cancel the operation without disconnection from the server
+    
+    @param   filtr:Filter  The filter to apply, update, or remove, gamma ramp
+                           meta-data must match the CRTC's
+    @param   address:int   The address of the state of the library, must be connected
+    @return  :tuple?       The value of `errno` (on failure) or:
+                           Element 0: whether the call was successful
+                           Element 1: tuple with the data for the structure response (possibly error)
+    '''
+    cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
+    cdef libcoopgamma_filter_t flr
+    crtc_bs = filtr.crtc.encode('utf-8') + bytes([0])
+    clss_bs = filtr.fclass.encode('utf-8') + bytes([0])
+    flr.priority = <int64_t>(filtr.priority)
+    flr.lifespan = <libcoopgamma_lifespan_t>(filtr.lifespan)
+    flr.depth = <libcoopgamma_depth_t>(filtr.depth)
+    flr.crtc = <char*>malloc(len(crtc_bs) * sizeof(char))
+    if flr.crtc is NULL:
+        return int(errno)
+    flr.fclass = <char*>malloc(len(clss_bs) * sizeof(char))
+    if flr.fclass is NULL:
+        saved_errno = int(errno)
+        free(flr.crtc)
+        return saved_errno
+    for i in range(len(crtc_bs)):
+        flr.crtc[i] = <char>(crtc_bs[i])
+    for i in range(len(clss_bs)):
+        flr.fclass[i] = <char>(clss_bs[i])
+    if libcoopgamma_set_gamma_recv(&ctx, &actx) < 0:
+        free(flr.crtc)
+        free(flr.fclass)
+        desc = None
+        if ctx->error.description is not NULL:
+            cdef bytes bs = ctx->error.description
+            desc = bs.decode('utf-8', 'strict')
+        return (int(ctx->error.number), ctx->error.custom != 0, ctx->error.server_side != 0, desc)
+    free(flr.crtc)
+    free(flr.fclass)
+    return None
 
