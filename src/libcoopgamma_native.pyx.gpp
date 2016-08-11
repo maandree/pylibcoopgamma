@@ -19,7 +19,7 @@ along with this library.  If not, see <http://www.gnu.org/licenses/>.
 cimport cython
 
 from libc.stddef cimport size_t
-from libc.stdlib cimport malloc, free
+from libc.stdlib cimport calloc, malloc, free
 from libc.stdint cimport int64_t, uint8_t, uint16_t, uint32_t, uint64_t, intptr_t
 from libc.errno cimport errno
 
@@ -806,12 +806,14 @@ def libcoopgamma_native_get_methods():
     cdef bytes bs
     if methods is NULL:
         return int(errno)
-    ret = []
-    i = 0
-    while methods[i] is not NULL:
-        bs = methods[i]
-        ret.append(bs.decode('utf-8', 'strict'))
-    free(methods)
+    try:
+        ret = []
+        i = 0
+        while methods[i] is not NULL:
+            bs = methods[i]
+            ret.append(bs.decode('utf-8', 'strict'))
+    finally:
+        free(methods)
 
 
 def libcoopgamma_native_get_method_and_site(method : str, site : str):
@@ -833,15 +835,19 @@ def libcoopgamma_native_get_method_and_site(method : str, site : str):
     cdef char* rcssite = NULL
     cdef bytes rbsmethod
     cdef bytes rbssite
-    rmethod, rsite = None, None
-    if libcoopgamma_get_method_and_site(method, site, &rbsmethod, &rbssite) < 0:
-        return int(errno)
-    rbsmethod = rcsmethod
-    rmethod = rbsmethod.decode('utf-8', 'strict')
-    if rcssite is not NULL:
-        rbssite = rcssite
-        rsite = rbssite.decode('utf-8', 'strict')
-    return (rmethod, rsite)
+    try:
+        rmethod, rsite = None, None
+        if libcoopgamma_get_method_and_site(method, site, &rcsmethod, &rcssite) < 0:
+            return int(errno)
+        rbsmethod = rcsmethod
+        rmethod = rbsmethod.decode('utf-8', 'strict')
+        if rcssite is not NULL:
+            rbssite = rcssite
+            rsite = rbssite.decode('utf-8', 'strict')
+        return (rmethod, rsite)
+    finally:
+        free(rcsmethod)
+        free(rcssite)
 
 
 def libcoopgamma_native_get_pid_file(method : str, site : str):
@@ -860,8 +866,11 @@ def libcoopgamma_native_get_pid_file(method : str, site : str):
     char bytes bs
     path = libcoopgamma_native_get_pid_file(method, site)
     if errno != 0 and path is NULL:
-        bs = path
-        return bs.decode('utf-8', 'strict')
+        try:
+            bs = path
+            return bs.decode('utf-8', 'strict')
+        finally:
+            free(path)
     return int(errno)
 
 
@@ -882,8 +891,11 @@ def libcoopgamma_native_get_socket_file(method : str, site : str):
     char bytes bs
     path = libcoopgamma_native_get_socket_file(method, site)
     if errno != 0 and path is NULL:
-        bs = path
-        return bs.decode('utf-8', 'strict')
+        try:
+            bs = path
+            return bs.decode('utf-8', 'strict')
+        finally:
+            free(path)
     return int(errno)
 
 
@@ -897,7 +909,7 @@ def libcoopgamma_native_context_create():
     '''
     cdef libcoopgamma_context_t* this
     this = <libcoopgamma_context_t*>malloc(sizeof(*this))
-    if this is None:
+    if this is NULL:
         return (False, int(errno))
     if libcoopgamma_context_initialise(this) < 0:
         saved_errno = int(errno)
@@ -931,10 +943,11 @@ def libcoopgamma_native_context_marshal(address : int):
     cdef char* buf = <char*>malloc(n)
     if buf is NULL:
         return int(errno)
-    libcoopgamma_context_marshal(this, buf)
-    ret = bytes(<int>(char[i]) for i in range(int(n)))
-    free(buf)
-    return ret
+    try:
+        libcoopgamma_context_marshal(this, buf)
+        return bytes(<int>(char[i]) for i in range(int(n)))
+    finally:
+        free(buf)
 
 
 def libcoopgamma_native_context_unmarshal(buf : bytes):
@@ -951,15 +964,18 @@ def libcoopgamma_native_context_unmarshal(buf : bytes):
     '''
     cdef size_t ret1 = 0
     cdef libcoopgamma_context_t* this
-    this = <libcoopgamma_context_t*>malloc(sizeof(*this))
+    this = <libcoopgamma_context_t*>calloc(1, sizeof(*this))
     if this is NULL:
         return (-1, int(errno))
-    if libcoopgamma_context_initialise(this) < 0:
-        saved_errno = int(errno)
+    try:
+        if libcoopgamma_context_initialise(this) < 0:
+            saved_errno = int(errno)
+            return (-1, saved_errno)
+        ret0 = <int>libcoopgamma_context_unmarshal(this, <bytes>buf, &ret1)
+        return (ret0, <int>ret1)
+    finally:
         libcoopgamma_context_destroy(this)
-        return (-1, int(errno))
-    ret0 = <int>libcoopgamma_context_unmarshal(this, <bytes>buf, &ret1)
-    return (ret0, <int>ret1)
+        free(this)
 
 
 def libcoopgamma_native_context_set_fd(address : int, fd : int):
@@ -1015,11 +1031,13 @@ def libcoopgamma_native_async_context_marshal(address : int):
     cdef libcoopgamma_async_context_t* this = <libcoopgamma_async_context_t*><void*><intptr_t>address
     cdef size_t n = libcoopgamma_async_context_marshal(this, NULL)
     cdef char* buf = <char*>malloc(n)
-    if buf is NULL:
-        return int(errno)
-    libcoopgamma_async_context_marshal(this, buf)
-    ret = bytes(<int>(char[i]) for i in range(int(n)))
-    free(buf)
+    try:
+        if buf is NULL:
+            return int(errno)
+        libcoopgamma_async_context_marshal(this, buf)
+        ret = bytes(<int>(char[i]) for i in range(int(n)))
+    finally:
+        free(buf)
     return ret
 
 
@@ -1043,8 +1061,10 @@ def libcoopgamma_native_async_context_unmarshal(buf : bytes):
     if libcoopgamma_async_context_initialise(this) < 0:
         saved_errno = int(errno)
         libcoopgamma_async_context_destroy(this)
+        free(this)
         return (-1, int(errno))
     ret0 = <int>libcoopgamma_async_context_unmarshal(this, <bytes>buf, &ret1)
+    free(this)
     return (ret0, <int>ret1)
 
 
@@ -1122,15 +1142,16 @@ def libcoopgamma_native_synchronise(address : int, pending : list):
     cdef libcoopgamma_async_context_t* pends
     cdef size_t selected = 0
     pends = <libcoopgamma_async_context_t*>malloc(n * sizeof(*pends))
-    if pends is NULL:
-        return (False, int(errno))
-    for i in range(len(pending)):
-        pends[i] = *<libcoopgamma_async_context_t*><void*><intptr_t>pendings[i]
-    if libcoopgamma_synchronise(ctx, pends, <size_t>len(pending), &selected) < 0:
-        saved_errno = int(errno)
+    try:
+        if pends is NULL:
+            return (False, int(errno))
+        for i in range(len(pending)):
+            pends[i] = *<libcoopgamma_async_context_t*><void*><intptr_t>pendings[i]
+        if libcoopgamma_synchronise(ctx, pends, <size_t>len(pending), &selected) < 0:
+            saved_errno = int(errno)
+            return (False, saved_errno)
+    finally:
         free(pends)
-        return (False, saved_errno)
-    free(pends)
     return (True, <int>selected)
 
 
@@ -1173,12 +1194,14 @@ def libcoopgamma_native_get_crtcs_recv(address : int, async : int):
     cdef bytes bs
     if crtcs is NULL:
         return int(errno)
-    ret, i = [], 0
-    while crtcs[i] is not NULL:
-        bs = crtcs[i]
-        ret.append(bs.decode('utf-8', 'strict'))
-        i += 1
-    free(crtcs)
+    try:
+        ret, i = [], 0
+        while crtcs[i] is not NULL:
+            bs = crtcs[i]
+            ret.append(bs.decode('utf-8', 'strict'))
+            i += 1
+    finally:
+        free(crtcs)
     return ret
 
 
@@ -1200,14 +1223,16 @@ def libcoopgamma_native_get_crtcs_sync(address : int):
     cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
     cdef char** crtcs = libcoopgamma_get_crtcs_sync(ctxactx)
     cdef bytes bs
-    if crtcs is NULL:
-        return int(errno)
-    ret, i = [], 0
-    while crtcs[i] is not NULL:
-        bs = crtcs[i]
-        ret.append(bs.decode('utf-8', 'strict'))
-        i += 1
-    free(crtcs)
+    try:
+        if crtcs is NULL:
+            return int(errno)
+        ret, i = [], 0
+        while crtcs[i] is not NULL:
+            bs = crtcs[i]
+            ret.append(bs.decode('utf-8', 'strict'))
+            i += 1
+    finally:
+        free(crtcs)
     return ret
 
 
@@ -1226,8 +1251,11 @@ def libcoopgamma_native_get_gamma_info_send(crtc : str, address : int, async : i
     cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
     cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
     cdef bytes ccrtc = crtc.encode('utf-8')
-    if libcoopgamma_get_gamma_info_send(<char*>ccrtc, ctx, actx) < 0:
-        return int(errno)
+    try:
+        if libcoopgamma_get_gamma_info_send(<char*>ccrtc, ctx, actx) < 0:
+            return int(errno)
+    finally:
+        free(ccrtcs)
     return 0
 
 
@@ -1244,22 +1272,24 @@ def libcoopgamma_native_get_gamma_info_recv(address : int, async : int):
     cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
     cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
     cdef libcoopgamma_crtc_info_t info
-    if libcoopgamma_crtc_info_initialise(&info) < 0:
-        return int(errno)
-    if libcoopgamma_get_gamma_info_recv(&info, ctx, actx) < 0:
-        desc = None
-        if ctx->error.description is not NULL:
-            cdef bytes bs = ctx->error.description
-            desc = bs.decode('utf-8', 'strict')
-        ret = (False, (int(ctx->error.number), ctx->error.custom != 0, ctx->error.server_side != 0, desc))
-    else:
-        ret = (True, (info.cooperative != 0, int(info.depth), int(info.supported), int(info.red_size),
-                      int(info.green_size), int(info.blue_size), int(info.colourspace),
-                      None if info.have_gamut == 0 else ((info.red_x, info.red_y),
-                                                         (info.green_x, info.green_y),
-                                                         (info.blue_x, info.blue_y),
-                                                         (info.white_x, info.white_y))))
-    libcoopgamma_crtc_info_destroy(&info)
+    try:
+        if libcoopgamma_crtc_info_initialise(&info) < 0:
+            return int(errno)
+        if libcoopgamma_get_gamma_info_recv(&info, ctx, actx) < 0:
+            desc = None
+            if ctx->error.description is not NULL:
+                cdef bytes bs = ctx->error.description
+                desc = bs.decode('utf-8', 'strict')
+            ret = (False, (int(ctx->error.number), ctx->error.custom != 0, ctx->error.server_side != 0, desc))
+        else:
+            ret = (True, (info.cooperative != 0, int(info.depth), int(info.supported), int(info.red_size),
+                          int(info.green_size), int(info.blue_size), int(info.colourspace),
+                          None if info.have_gamut == 0 else ((info.red_x, info.red_y),
+                                                             (info.green_x, info.green_y),
+                                                             (info.blue_x, info.blue_y),
+                                                             (info.white_x, info.white_y))))
+    finally:
+        libcoopgamma_crtc_info_destroy(&info)
     return ret
 
 
@@ -1282,22 +1312,25 @@ def libcoopgamma_native_get_gamma_info_sync(crtc : str, address : int):
     cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
     cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
     cdef libcoopgamma_crtc_info_t info
-    if libcoopgamma_crtc_info_initialise(&info) < 0:
-        return int(errno)
-    if libcoopgamma_get_gamma_info_sync(<char*>ccrtc, &info, ctx, actx) < 0:
-        desc = None
-        if ctx->error.description is not NULL:
-            cdef bytes bs = ctx->error.description
-            desc = bs.decode('utf-8', 'strict')
-        ret = (False, (int(ctx->error.number), ctx->error.custom != 0, ctx->error.server_side != 0, desc))
-    else:
-        ret = (True, (info.cooperative != 0, int(info.depth), int(info.supported), int(info.red_size),
-                      int(info.green_size), int(info.blue_size), int(info.colourspace),
-                      None if info.have_gamut == 0 else ((info.red_x, info.red_y),
-                                                         (info.green_x, info.green_y),
-                                                         (info.blue_x, info.blue_y),
-                                                         (info.white_x, info.white_y))))
-    libcoopgamma_crtc_info_destroy(&info)
+    try:
+        if libcoopgamma_crtc_info_initialise(&info) < 0:
+            return int(errno)
+        if libcoopgamma_get_gamma_info_sync(<char*>ccrtc, &info, ctx, actx) < 0:
+            desc = None
+            if ctx->error.description is not NULL:
+                cdef bytes bs = ctx->error.description
+                desc = bs.decode('utf-8', 'strict')
+            ret = (False, (int(ctx->error.number), ctx->error.custom != 0, ctx->error.server_side != 0, desc))
+        else:
+            ret = (True, (info.cooperative != 0, int(info.depth), int(info.supported), int(info.red_size),
+                          int(info.green_size), int(info.blue_size), int(info.colourspace),
+                          None if info.have_gamut == 0 else ((info.red_x, info.red_y),
+                                                             (info.green_x, info.green_y),
+                                                             (info.blue_x, info.blue_y),
+                                                             (info.white_x, info.white_y))))
+    finally:
+        libcoopgamma_crtc_info_destroy(&info)
+        free(ccrtcs)
     return ret
 
 
@@ -1322,15 +1355,16 @@ def libcoopgamma_native_get_gamma_send(query, address : int, async : int):
     qry.low_priority = <int64_t>(query.low_priority)
     qry.coalesce = <int>(query.coalesce)
     qry.crtc = <char*>malloc(len(crtc_bs) * sizeof(char))
-    if qry.crtc is NULL:
-        return int(errno)
-    for i in range(len(crtc_bs)):
-        qry.crtc[i] = <char>(crtc_bs[i])
-    if libcoopgamma_get_gamma_send(&qry, ctx, actx) < 0:
-        saved_errno = int(errno)
+    try:
+        if qry.crtc is NULL:
+            return int(errno)
+        for i in range(len(crtc_bs)):
+            qry.crtc[i] = <char>(crtc_bs[i])
+        if libcoopgamma_get_gamma_send(&qry, ctx, actx) < 0:
+            saved_errno = int(errno)
+            return saved_errno
+    finally:
         free(qry.crtc)
-        return saved_errno
-    free(qry.crtc)
     return 0
     
 
@@ -1347,87 +1381,89 @@ def libcoopgamma_native_get_gamma_recv(address : int, async : int):
     cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
     cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
     cdef libcoopgamma_filter_table_t table
-    if libcoopgamma_filter_table_initialise(&table) < 0:
-        return int(errno)
-    if libcoopgamma_get_gamma_recv(&info, ctx, actx) < 0:
-        desc = None
-        if ctx->error.description is not NULL:
-            cdef bytes bs = ctx->error.description
-            desc = bs.decode('utf-8', 'strict')
-        ret = (False, (int(ctx->error.number), ctx->error.custom != 0, ctx->error.server_side != 0, desc))
-    else:
-        filters = [None] * int(table.filter_count)
-        for i in range(int(table.filter_count)):
-            cdef libcoopgamma_ramps_t* rampsp = &(table.filters[i].fclass.ramps)
-            cdef bytes fclass = table.filters[i].fclass
-            red   = [None] * rampsp->red_size
-            green = [None] * rampsp->green_size
-            blue  = [None] * rampsp->blue_size
-            if table.depth == -2:
-                cdef double* r = <double*>(rampsp->red)
-                cdef double* g = <double*>(rampsp->green)
-                cdef double* b = <double*>(rampsp->blue)
-                for i in range(rampsp->red_size):
-                    red[i] = r[i]
-                for i in range(rampsp->green_size):
-                    green[i] = r[i]
-                for i in range(rampsp->blue_size):
-                    blue[i] = r[i]
-            elif table.depth == -1:
-                cdef float* r = <float*>(rampsp->red)
-                cdef float* g = <float*>(rampsp->green)
-                cdef float* b = <float*>(rampsp->blue)
-                for i in range(rampsp->red_size):
-                    red[i] = r[i]
-                for i in range(rampsp->green_size):
-                    green[i] = r[i]
-                for i in range(rampsp->blue_size):
-                    blue[i] = r[i]
-            elif table.depth == 8:
-                cdef uint8_t* r = <uint8_t*>(rampsp->red)
-                cdef uint8_t* g = <uint8_t*>(rampsp->green)
-                cdef uint8_t* b = <uint8_t*>(rampsp->blue)
-                for i in range(rampsp->red_size):
-                    red[i] = r[i]
-                for i in range(rampsp->green_size):
-                    green[i] = r[i]
-                for i in range(rampsp->blue_size):
-                    blue[i] = r[i]
-            elif table.depth == 16:
-                cdef uint16_t* r = <uint16_t*>(rampsp->red)
-                cdef uint16_t* g = <uint16_t*>(rampsp->green)
-                cdef uint16_t* b = <uint16_t*>(rampsp->blue)
-                for i in range(rampsp->red_size):
-                    red[i] = r[i]
-                for i in range(rampsp->green_size):
-                    green[i] = r[i]
-                for i in range(rampsp->blue_size):
-                    blue[i] = r[i]
-            elif table.depth == 32:
-                cdef uint32_t* r = <uint32_t*>(rampsp->red)
-                cdef uint32_t* g = <uint32_t*>(rampsp->green)
-                cdef uint32_t* b = <uint32_t*>(rampsp->blue)
-                for i in range(rampsp->red_size):
-                    red[i] = r[i]
-                for i in range(rampsp->green_size):
-                    green[i] = r[i]
-                for i in range(rampsp->blue_size):
-                    blue[i] = r[i]
-            elif table.depth == 64:
-                cdef uint64_t* r = <uint64_t*>(rampsp->red)
-                cdef uint64_t* g = <uint64_t*>(rampsp->green)
-                cdef uint64_t* b = <uint64_t*>(rampsp->blue)
-                for i in range(rampsp->red_size):
-                    red[i] = r[i]
-                for i in range(rampsp->green_size):
-                    green[i] = r[i]
-                for i in range(rampsp->blue_size):
-                    blue[i] = r[i]
-            ramps = (rampsp->red_size, rampsp->green_size, rampsp->blue_size, red, green, blue)
-            filters[i] = (int(table.filters[i].priority), fclass.decode('utf-8', 'strict'), ramps)
-        ret = (True, (int(table.red_size), int(table.green_size), int(table.blue_size),
-                      int(table.colourspace), int(table.depth), filters))
-    libcoopgamma_filter_table_destroy(&table)
+    try:
+        if libcoopgamma_filter_table_initialise(&table) < 0:
+            return int(errno)
+        if libcoopgamma_get_gamma_recv(&info, ctx, actx) < 0:
+            desc = None
+            if ctx->error.description is not NULL:
+                cdef bytes bs = ctx->error.description
+                desc = bs.decode('utf-8', 'strict')
+            ret = (False, (int(ctx->error.number), ctx->error.custom != 0, ctx->error.server_side != 0, desc))
+        else:
+            filters = [None] * int(table.filter_count)
+            for i in range(int(table.filter_count)):
+                cdef libcoopgamma_ramps_t* rampsp = &(table.filters[i].fclass.ramps)
+                cdef bytes fclass = table.filters[i].fclass
+                red   = [None] * rampsp->red_size
+                green = [None] * rampsp->green_size
+                blue  = [None] * rampsp->blue_size
+                if table.depth == -2:
+                    cdef double* r = <double*>(rampsp->red)
+                    cdef double* g = <double*>(rampsp->green)
+                    cdef double* b = <double*>(rampsp->blue)
+                    for i in range(rampsp->red_size):
+                        red[i] = r[i]
+                    for i in range(rampsp->green_size):
+                        green[i] = r[i]
+                    for i in range(rampsp->blue_size):
+                        blue[i] = r[i]
+                elif table.depth == -1:
+                    cdef float* r = <float*>(rampsp->red)
+                    cdef float* g = <float*>(rampsp->green)
+                    cdef float* b = <float*>(rampsp->blue)
+                    for i in range(rampsp->red_size):
+                        red[i] = r[i]
+                    for i in range(rampsp->green_size):
+                        green[i] = r[i]
+                    for i in range(rampsp->blue_size):
+                        blue[i] = r[i]
+                elif table.depth == 8:
+                    cdef uint8_t* r = <uint8_t*>(rampsp->red)
+                    cdef uint8_t* g = <uint8_t*>(rampsp->green)
+                    cdef uint8_t* b = <uint8_t*>(rampsp->blue)
+                    for i in range(rampsp->red_size):
+                        red[i] = r[i]
+                    for i in range(rampsp->green_size):
+                        green[i] = r[i]
+                    for i in range(rampsp->blue_size):
+                        blue[i] = r[i]
+                elif table.depth == 16:
+                    cdef uint16_t* r = <uint16_t*>(rampsp->red)
+                    cdef uint16_t* g = <uint16_t*>(rampsp->green)
+                    cdef uint16_t* b = <uint16_t*>(rampsp->blue)
+                    for i in range(rampsp->red_size):
+                        red[i] = r[i]
+                    for i in range(rampsp->green_size):
+                        green[i] = r[i]
+                    for i in range(rampsp->blue_size):
+                        blue[i] = r[i]
+                elif table.depth == 32:
+                    cdef uint32_t* r = <uint32_t*>(rampsp->red)
+                    cdef uint32_t* g = <uint32_t*>(rampsp->green)
+                    cdef uint32_t* b = <uint32_t*>(rampsp->blue)
+                    for i in range(rampsp->red_size):
+                        red[i] = r[i]
+                    for i in range(rampsp->green_size):
+                        green[i] = r[i]
+                    for i in range(rampsp->blue_size):
+                        blue[i] = r[i]
+                elif table.depth == 64:
+                    cdef uint64_t* r = <uint64_t*>(rampsp->red)
+                    cdef uint64_t* g = <uint64_t*>(rampsp->green)
+                    cdef uint64_t* b = <uint64_t*>(rampsp->blue)
+                    for i in range(rampsp->red_size):
+                        red[i] = r[i]
+                    for i in range(rampsp->green_size):
+                        green[i] = r[i]
+                    for i in range(rampsp->blue_size):
+                        blue[i] = r[i]
+                ramps = (rampsp->red_size, rampsp->green_size, rampsp->blue_size, red, green, blue)
+                filters[i] = (int(table.filters[i].priority), fclass.decode('utf-8', 'strict'), ramps)
+            ret = (True, (int(table.red_size), int(table.green_size), int(table.blue_size),
+                          int(table.colourspace), int(table.depth), filters))
+    finally:
+        libcoopgamma_filter_table_destroy(&table)
     return ret
 
 
@@ -1454,93 +1490,99 @@ def libcoopgamma_native_get_gamma_sync(query, address : int):
     qry.low_priority = <int64_t>(query.low_priority)
     qry.coalesce = <int>(query.coalesce)
     qry.crtc = <char*>malloc(len(crtc_bs) * sizeof(char))
-    if qry.crtc is NULL:
-        return int(errno)
-    for i in range(len(crtc_bs)):
-        qry.crtc[i] = <char>(crtc_bs[i])
-    if libcoopgamma_filter_table_initialise(&table) < 0:
-        saved_errno = int(errno)
+    try:
+        if qry.crtc is NULL:
+            return int(errno)
+        for i in range(len(crtc_bs)):
+            qry.crtc[i] = <char>(crtc_bs[i])
+        if libcoopgamma_filter_table_initialise(&table) < 0:
+            saved_errno = int(errno)
+            libcoopgamma_filter_table_destroy(&table)
+            return saved_errno
+        try:
+            if libcoopgamma_get_gamma_sync(&qry, &info, ctx) < 0:
+                desc = None
+                if ctx->error.description is not NULL:
+                    cdef bytes bs = ctx->error.description
+                    desc = bs.decode('utf-8', 'strict')
+                ret = (False, (int(ctx->error.number), ctx->error.custom != 0,
+                               ctx->error.server_side != 0, desc))
+            else:
+                filters = [None] * int(table.filter_count)
+                for i in range(int(table.filter_count)):
+                    cdef libcoopgamma_ramps_t* rampsp = &(table.filters[i].fclass.ramps)
+                    cdef bytes fclass = table.filters[i].fclass
+                    red   = [None] * rampsp->red_size
+                    green = [None] * rampsp->green_size
+                    blue  = [None] * rampsp->blue_size
+                    if table.depth == -2:
+                        cdef double* r = <double*>(rampsp->red)
+                        cdef double* g = <double*>(rampsp->green)
+                        cdef double* b = <double*>(rampsp->blue)
+                        for i in range(rampsp->red_size):
+                            red[i] = r[i]
+                        for i in range(rampsp->green_size):
+                            green[i] = r[i]
+                        for i in range(rampsp->blue_size):
+                            blue[i] = r[i]
+                    elif table.depth == -1:
+                        cdef float* r = <float*>(rampsp->red)
+                        cdef float* g = <float*>(rampsp->green)
+                        cdef float* b = <float*>(rampsp->blue)
+                        for i in range(rampsp->red_size):
+                            red[i] = r[i]
+                        for i in range(rampsp->green_size):
+                            green[i] = r[i]
+                        for i in range(rampsp->blue_size):
+                            blue[i] = r[i]
+                    elif table.depth == 8:
+                        cdef uint8_t* r = <uint8_t*>(rampsp->red)
+                        cdef uint8_t* g = <uint8_t*>(rampsp->green)
+                        cdef uint8_t* b = <uint8_t*>(rampsp->blue)
+                        for i in range(rampsp->red_size):
+                            red[i] = r[i]
+                        for i in range(rampsp->green_size):
+                            green[i] = r[i]
+                        for i in range(rampsp->blue_size):
+                            blue[i] = r[i]
+                    elif table.depth == 16:
+                        cdef uint16_t* r = <uint16_t*>(rampsp->red)
+                        cdef uint16_t* g = <uint16_t*>(rampsp->green)
+                        cdef uint16_t* b = <uint16_t*>(rampsp->blue)
+                        for i in range(rampsp->red_size):
+                            red[i] = r[i]
+                        for i in range(rampsp->green_size):
+                            green[i] = r[i]
+                        for i in range(rampsp->blue_size):
+                            blue[i] = r[i]
+                    elif table.depth == 32:
+                        cdef uint32_t* r = <uint32_t*>(rampsp->red)
+                        cdef uint32_t* g = <uint32_t*>(rampsp->green)
+                        cdef uint32_t* b = <uint32_t*>(rampsp->blue)
+                        for i in range(rampsp->red_size):
+                            red[i] = r[i]
+                        for i in range(rampsp->green_size):
+                            green[i] = r[i]
+                        for i in range(rampsp->blue_size):
+                            blue[i] = r[i]
+                    elif table.depth == 64:
+                        cdef uint64_t* r = <uint64_t*>(rampsp->red)
+                        cdef uint64_t* g = <uint64_t*>(rampsp->green)
+                        cdef uint64_t* b = <uint64_t*>(rampsp->blue)
+                        for i in range(rampsp->red_size):
+                            red[i] = r[i]
+                        for i in range(rampsp->green_size):
+                            green[i] = r[i]
+                        for i in range(rampsp->blue_size):
+                            blue[i] = r[i]
+                    ramps = (rampsp->red_size, rampsp->green_size, rampsp->blue_size, red, green, blue)
+                    filters[i] = (int(table.filters[i].priority), fclass.decode('utf-8', 'strict'), ramps)
+                ret = (True, (int(table.red_size), int(table.green_size), int(table.blue_size),
+                              int(table.colourspace), int(table.depth), filters))
+        finally:
+            libcoopgamma_filter_table_destroy(&table)
+    finally:
         free(qry.crtc)
-        return saved_errno
-    if libcoopgamma_get_gamma_sync(&qry, &info, ctx) < 0:
-        desc = None
-        if ctx->error.description is not NULL:
-            cdef bytes bs = ctx->error.description
-            desc = bs.decode('utf-8', 'strict')
-        ret = (False, (int(ctx->error.number), ctx->error.custom != 0, ctx->error.server_side != 0, desc))
-    else:
-        filters = [None] * int(table.filter_count)
-        for i in range(int(table.filter_count)):
-            cdef libcoopgamma_ramps_t* rampsp = &(table.filters[i].fclass.ramps)
-            cdef bytes fclass = table.filters[i].fclass
-            red   = [None] * rampsp->red_size
-            green = [None] * rampsp->green_size
-            blue  = [None] * rampsp->blue_size
-            if table.depth == -2:
-                cdef double* r = <double*>(rampsp->red)
-                cdef double* g = <double*>(rampsp->green)
-                cdef double* b = <double*>(rampsp->blue)
-                for i in range(rampsp->red_size):
-                    red[i] = r[i]
-                for i in range(rampsp->green_size):
-                    green[i] = r[i]
-                for i in range(rampsp->blue_size):
-                    blue[i] = r[i]
-            elif table.depth == -1:
-                cdef float* r = <float*>(rampsp->red)
-                cdef float* g = <float*>(rampsp->green)
-                cdef float* b = <float*>(rampsp->blue)
-                for i in range(rampsp->red_size):
-                    red[i] = r[i]
-                for i in range(rampsp->green_size):
-                    green[i] = r[i]
-                for i in range(rampsp->blue_size):
-                    blue[i] = r[i]
-            elif table.depth == 8:
-                cdef uint8_t* r = <uint8_t*>(rampsp->red)
-                cdef uint8_t* g = <uint8_t*>(rampsp->green)
-                cdef uint8_t* b = <uint8_t*>(rampsp->blue)
-                for i in range(rampsp->red_size):
-                    red[i] = r[i]
-                for i in range(rampsp->green_size):
-                    green[i] = r[i]
-                for i in range(rampsp->blue_size):
-                    blue[i] = r[i]
-            elif table.depth == 16:
-                cdef uint16_t* r = <uint16_t*>(rampsp->red)
-                cdef uint16_t* g = <uint16_t*>(rampsp->green)
-                cdef uint16_t* b = <uint16_t*>(rampsp->blue)
-                for i in range(rampsp->red_size):
-                    red[i] = r[i]
-                for i in range(rampsp->green_size):
-                    green[i] = r[i]
-                for i in range(rampsp->blue_size):
-                    blue[i] = r[i]
-            elif table.depth == 32:
-                cdef uint32_t* r = <uint32_t*>(rampsp->red)
-                cdef uint32_t* g = <uint32_t*>(rampsp->green)
-                cdef uint32_t* b = <uint32_t*>(rampsp->blue)
-                for i in range(rampsp->red_size):
-                    red[i] = r[i]
-                for i in range(rampsp->green_size):
-                    green[i] = r[i]
-                for i in range(rampsp->blue_size):
-                    blue[i] = r[i]
-            elif table.depth == 64:
-                cdef uint64_t* r = <uint64_t*>(rampsp->red)
-                cdef uint64_t* g = <uint64_t*>(rampsp->green)
-                cdef uint64_t* b = <uint64_t*>(rampsp->blue)
-                for i in range(rampsp->red_size):
-                    red[i] = r[i]
-                for i in range(rampsp->green_size):
-                    green[i] = r[i]
-                for i in range(rampsp->blue_size):
-                    blue[i] = r[i]
-            ramps = (rampsp->red_size, rampsp->green_size, rampsp->blue_size, red, green, blue)
-            filters[i] = (int(table.filters[i].priority), fclass.decode('utf-8', 'strict'), ramps)
-        ret = (True, (int(table.red_size), int(table.green_size), int(table.blue_size),
-                      int(table.colourspace), int(table.depth), filters))
-    libcoopgamma_filter_table_destroy(&table)
     return ret
 
 
@@ -1565,24 +1607,23 @@ def libcoopgamma_native_set_gamma_send(filtr, address : int, async : int):
     flr.priority = <int64_t>(filtr.priority)
     flr.lifespan = <libcoopgamma_lifespan_t>(filtr.lifespan)
     flr.depth = <libcoopgamma_depth_t>(filtr.depth)
+    flr.fclass = NULL
     flr.crtc = <char*>malloc(len(crtc_bs) * sizeof(char))
-    if flr.crtc is NULL:
-        return int(errno)
-    flr.fclass = <char*>malloc(len(clss_bs) * sizeof(char))
-    if flr.fclass is NULL:
-        saved_errno = int(errno)
-        free(flr.crtc)
-        return saved_errno
-    for i in range(len(crtc_bs)):
-        flr.crtc[i] = <char>(crtc_bs[i])
-    for i in range(len(clss_bs)):
-        flr.fclass[i] = <char>(clss_bs[i])
-    if libcoopgamma_set_gamma_send(&flr, ctx, actx) < 0:
-        saved_errno = int(errno)
+    try:
+        if flr.crtc is NULL:
+            return int(errno)
+        flr.fclass = <char*>malloc(len(clss_bs) * sizeof(char))
+        if flr.fclass is NULL:
+            return int(errno)
+        for i in range(len(crtc_bs)):
+            flr.crtc[i] = <char>(crtc_bs[i])
+        for i in range(len(clss_bs)):
+            flr.fclass[i] = <char>(clss_bs[i])
+        if libcoopgamma_set_gamma_send(&flr, ctx, actx) < 0:
+            return int(errno)
+    finally:
         free(flr.crtc)
         free(flr.fclass)
-        return saved_errno
-    free(flr.crtc)
     return 0
 
 
@@ -1630,27 +1671,27 @@ def libcoopgamma_native_set_gamma_sync(filtr, address : int):
     flr.priority = <int64_t>(filtr.priority)
     flr.lifespan = <libcoopgamma_lifespan_t>(filtr.lifespan)
     flr.depth = <libcoopgamma_depth_t>(filtr.depth)
+    flr.fclass = NULL
     flr.crtc = <char*>malloc(len(crtc_bs) * sizeof(char))
-    if flr.crtc is NULL:
-        return int(errno)
-    flr.fclass = <char*>malloc(len(clss_bs) * sizeof(char))
-    if flr.fclass is NULL:
-        saved_errno = int(errno)
-        free(flr.crtc)
-        return saved_errno
-    for i in range(len(crtc_bs)):
-        flr.crtc[i] = <char>(crtc_bs[i])
-    for i in range(len(clss_bs)):
-        flr.fclass[i] = <char>(clss_bs[i])
-    if libcoopgamma_set_gamma_recv(&ctx, &actx) < 0:
+    try:
+        if flr.crtc is NULL:
+            return int(errno)
+        flr.fclass = <char*>malloc(len(clss_bs) * sizeof(char))
+        if flr.fclass is NULL:
+            saved_errno = int(errno)
+            return saved_errno
+        for i in range(len(crtc_bs)):
+            flr.crtc[i] = <char>(crtc_bs[i])
+        for i in range(len(clss_bs)):
+            flr.fclass[i] = <char>(clss_bs[i])
+        if libcoopgamma_set_gamma_recv(&ctx, &actx) < 0:
+            desc = None
+            if ctx->error.description is not NULL:
+                cdef bytes bs = ctx->error.description
+                desc = bs.decode('utf-8', 'strict')
+            return (int(ctx->error.number), ctx->error.custom != 0, ctx->error.server_side != 0, desc)
+    finally:
         free(flr.crtc)
         free(flr.fclass)
-        desc = None
-        if ctx->error.description is not NULL:
-            cdef bytes bs = ctx->error.description
-            desc = bs.decode('utf-8', 'strict')
-        return (int(ctx->error.number), ctx->error.custom != 0, ctx->error.server_side != 0, desc)
-    free(flr.crtc)
-    free(flr.fclass)
     return None
 
