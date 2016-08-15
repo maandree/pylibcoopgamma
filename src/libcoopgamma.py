@@ -536,6 +536,137 @@ class ErrorReport:
         '''
         params = (self.number, self.custom, self.server_side, self.description)
         return 'libcoopgamma.ErrorReport(%s)' % ', '.join(repr(p) for p in params)
+    
+    @staticmethod
+    def create_error(error):
+        '''
+        Create an instance of a subclass of `Exception`
+        
+        @param  error  Error information
+        '''
+        if isinstance(error, int):
+            import os
+            return OSError(error, os.strerror(error))
+        else:
+            return LibcoopgammaError(ErrorReport(*error))
+
+
+class LibcoopgammaError(Exception):
+    '''
+    libcoopgamma error class
+    
+    @variable  error:ErrorReport  Error information
+    '''
+    def __init__(self, error : ErrorReport):
+        '''
+        Constructor
+        
+        @param  error:ErrorReport  Error information
+        '''
+        self.error = error
+    
+    def __str__(self) -> str:
+        '''
+        Return description and error number as a string
+        
+        @return  :str  Description and error number
+        '''
+        if self.error.description is not None:
+            if self.error.number != 0:
+                return '%s (#%i)' % (self.error.description, self.error.number)
+            else:
+                return '%s' % self.error.description
+        else:
+            return '#%i' % self.error.number
+    
+    def __repr__(self) -> str:
+        '''
+        Create a parsable string representation of the instance
+        
+        @return  :str  Parsable representation of the instance
+        '''
+        return 'libcoopgamma.LibcoopgammaError(%s)' % repr(self.error)
+
+
+class IncompatibleDowngradeError(Exception):
+    '''
+    Unmarshalled state from a newer version, that is not supported, of libcoopgamma
+    '''
+    def __init__(self):
+        '''
+        Constructor
+        '''
+        pass
+    
+    def __str__(self) -> str:
+        '''
+        Return descriptor of the error
+        
+        @return  :str  Descriptor of the error
+        '''
+        return 'Incompatible downgrade error'
+    
+    def __repr__(self) -> str:
+        '''
+        Create a parsable string representation of the instance
+        
+        @return  :str  Parsable representation of the instance
+        '''
+        return 'libcoopgamma.IncompatibleDowngradeError()'
+
+
+class IncompatibleUpgradeError(Exception):
+    '''
+    Unmarshalled state from an older version, that is no longer supported, of libcoopgamma
+    '''
+    def __init__(self):
+        '''
+        Constructor
+        '''
+        pass
+    
+    def __str__(self) -> str:
+        '''
+        Return descriptor of the error
+        
+        @return  :str  Descriptor of the error
+        '''
+        return 'Incompatible downgrade error'
+    
+    def __repr__(self) -> str:
+        '''
+        Create a parsable string representation of the instance
+        
+        @return  :str  Parsable representation of the instance
+        '''
+        return 'libcoopgamma.IncompatibleUpgradeErrorError()'
+
+
+class ServerInitialisationError(Exception):
+    '''
+    coopgamma server failed to initialise, reason unknown
+    '''
+    def __init__(self):
+        '''
+        Constructor
+        '''
+        pass
+    
+    def __str__(self) -> str:
+        '''
+        Return descriptor of the error
+        
+        @return  :str  Descriptor of the error
+        '''
+        return 'Server initialisation error'
+    
+    def __repr__(self) -> str:
+        '''
+        Create a parsable string representation of the instance
+        
+        @return  :str  Parsable representation of the instance
+        '''
+        return 'libcoopgamma.ServerInitialisationError()'
 
 
 class Context:
@@ -558,15 +689,15 @@ class Context:
         if buf is None:
             (successful, value) = libcoopgamma_native.libcoopgamma_native_context_create()
             if not successful:
-                pass # TODO
+                raise ErrorReport.create_error(value)
         else:
             (error, value) = libcoopgamma_native.libcoopgamma_native_context_unmarshal(buf)
             if error < 0:
-                pass # TODO
+                raise ErrorReport.create_error(value)
             elif error == 1:
-                pass # TODO LIBCOOPGAMMA_INCOMPATIBLE_DOWNGRADE
+                raise IncompatibleDowngradeError()
             elif error == 2:
-                pass # TODO LIBCOOPGAMMA_INCOMPATIBLE_UPGRADE
+                raise IncompatibleUpgradeError()
         self.address = value
     
     def __del__(self):
@@ -583,7 +714,7 @@ class Context:
         '''
         data = libcoopgamma_native.libcoopgamma_native_context_marshal(self.address)
         if isinstance(data, int):
-            pass # TODO
+            raise ErrorReport.create_error(data)
         params = (self.fd, data)
         return 'libcoopgamma.Context(%s)' % ', '.join(repr(p) for p in params)
     
@@ -605,10 +736,10 @@ class Context:
             method = str(method)
         error = llibcoopgamma_native.ibcoopgamma_native_connect(method, site, self.address)
         if error is not None:
-            if errno == 0:
-                pass # TODO server failed to initialise
+            if error == 0:
+                raise ServerInitialisationError()
             else:
-                pass # TODO
+                raise ErrorReport.create_error(error)
     
     def detach(self):
         '''
@@ -639,7 +770,7 @@ class Context:
         '''
         error = libcoopgamma_native.libcoopgamma_native_set_nonblocking(self.address, nonbreaking)
         if error != 0:
-            pass # TODO
+            raise ErrorReport.create_error(error)
     
     def flush(self):
         '''
@@ -651,7 +782,7 @@ class Context:
         '''
         error = libcoopgamma_native.libcoopgamma_native_flush(self.address)
         if error != 0:
-            pass # TODO
+            raise ErrorReport.create_error(error)
     
     def synchronise(self, pending : list) -> int:
         '''
@@ -670,10 +801,10 @@ class Context:
         pending = [p.address for p in pending]
         (successful, value) = libcoopgamma_native.libcoopgamma_native_flush(self.address, pending)
         if not successful:
-            if error == 0:
+            if value == 0:
                 return None
             else:
-                pass # TODO
+                raise ErrorReport.create_error(value)
         else:
             return value
     
@@ -694,7 +825,7 @@ class Context:
         error = libcoopgamma_native.libcoopgamma_native_get_crtcs_send(self.address, async.address)
         if error != 0:
             del async
-            pass # TODO
+            raise ErrorReport.create_error(error)
         return async
     
     def get_crtcs_recv(self, async : AsyncContext) -> list:
@@ -708,7 +839,7 @@ class Context:
         '''
         ret = libcoopgamma_native.libcoopgamma_native_get_crtcs_recv(self.address, async.address)
         if isinstance(ret, int):
-            pass # TODO
+            raise ErrorReport.create_error(ret)
         return ret
     
     def get_crtcs_sync(self) -> list:
@@ -725,7 +856,7 @@ class Context:
         '''
         ret = libcoopgamma_native.libcoopgamma_native_get_crtcs_sync(self.address)
         if isinstance(ret, int):
-            pass # TODO
+            raise ErrorReport.create_error(ret)
         return ret
     
     def get_gamma_info_send(self, crtc : str) -> AsyncContext:
@@ -741,7 +872,7 @@ class Context:
                                   crtc, self.address, async.address)
         if successful:
             del async
-            pass # TODO
+            raise ErrorReport.create_error(value)
         return async
     
     def get_gamma_info_recv(self, async : AsyncContext) -> CRTCInfo:
@@ -753,10 +884,10 @@ class Context:
         '''
         value = libcoopgamma_native.libcoopgamma_native_get_gamma_info_send(self.address, async.address)
         if isinstance(value, int):
-            pass # TODO
+            raise ErrorReport.create_error(value)
         (successful, value) = value
         if successful:
-            pass # TODO
+            raise ErrorReport.create_error(value)
         return CRTCInfo(*value)
     
     def get_gamma_info_sync(self, crtc : str) -> CRTCInfo:
@@ -773,10 +904,10 @@ class Context:
         '''
         value = libcoopgamma_native.libcoopgamma_native_get_gamma_info_sync(crtc, self.address, async.address)
         if isinstance(value, int):
-            pass # TODO
+            raise ErrorReport.create_error(value)
         (successful, value) = value
         if successful:
-            pass # TODO
+            raise ErrorReport.create_error(value)
         return CRTCInfo(*value)
     
     def get_gamma_send(self, query : FilterQuery) -> AsyncContext:
@@ -792,7 +923,7 @@ class Context:
                                   query, self.address, async.address)
         if successful:
             del async
-            pass # TODO
+            raise ErrorReport.create_error(value)
         return async
     
     def get_gamma_recv(self, async : AsyncContext) -> FilterTable:
@@ -804,10 +935,10 @@ class Context:
         '''
         value = libcoopgamma_native.libcoopgamma_native_get_gamma_send(self.address, async.address)
         if isinstance(value, int):
-            pass # TODO
+            raise ErrorReport.create_error(value)
         (successful, value) = value
         if successful:
-            pass # TODO
+            raise ErrorReport.create_error(value)
         return FilterTable:(*value)
     
     def get_gamma_sync(self, query : FilterQuery) -> FilterTable:
@@ -824,10 +955,10 @@ class Context:
         '''
         value = libcoopgamma_native.libcoopgamma_native_get_gamma_sync(query, self.address, async.address)
         if isinstance(value, int):
-            pass # TODO
+            raise ErrorReport.create_error(value)
         (successful, value) = value
         if successful:
-            pass # TODO
+            raise ErrorReport.create_error(value)
         return FilterTable(*value)
     
     def set_gamma_send(self, filtr : Filter) -> AsyncContext:
@@ -843,7 +974,7 @@ class Context:
         error = libcoopgamma_native.libcoopgamma_native_set_gamma_send(filtr, self.address, async.address)
         if error != 0:
             del async
-            pass # TODO
+            raise ErrorReport.create_error(error)
         return async
     
     def set_gamma_recv(self, async : AsyncContext):
@@ -854,7 +985,7 @@ class Context:
         '''
         error = libcoopgamma_native.libcoopgamma_native_set_gamma_recv(self.address, async.address)
         if error is not None:
-            pass # TODO
+            raise ErrorReport.create_error(error)
     
     def set_gamma_sync(self, filtr : Filter):
         '''
@@ -870,7 +1001,7 @@ class Context:
         '''
         error = libcoopgamma_native.libcoopgamma_native_set_gamma_sync(filtr, self.address)
         if error is not None:
-            pass # TODO
+            raise ErrorReport.create_error(error)
 
 
 class AsyncContext:
@@ -886,15 +1017,15 @@ class AsyncContext:
         if buf is None:
             (successful, value) = libcoopgamma_native.libcoopgamma_native_async_context_create()
             if not successful:
-                pass # TODO
+                raise ErrorReport.create_error(value)
         else:
             (error, value) = libcoopgamma_native.libcoopgamma_native_async_context_unmarshal(buf)
             if error < 0:
-                pass # TODO
+                raise ErrorReport.create_error(value)
             elif error == 1:
-                pass # TODO LIBCOOPGAMMA_INCOMPATIBLE_DOWNGRADE
+                raise IncompatibleDowngradeError()
             elif error == 2:
-                pass # TODO LIBCOOPGAMMA_INCOMPATIBLE_UPGRADE
+                raise IncompatibleUpgradeError()
         self.address = value
     
     def __del__(self):
@@ -911,7 +1042,7 @@ class AsyncContext:
         '''
         data = libcoopgamma_native.libcoopgamma_native_async_context_marshal(self.address)
         if isinstance(data, int):
-            pass # TODO
+            raise ErrorReport.create_error(data)
         return 'libcoopgamma.AsyncContext(%s)' % repr(data)
 
 
@@ -926,7 +1057,7 @@ def get_methods() -> list:
     '''
     ret = libcoopgamma_native.libcoopgamma_native_get_methods()
     if isinstance(ret, int):
-        pass # TODO
+        raise ErrorReport.create_error(ret)
     return ret
 
 
@@ -948,7 +1079,7 @@ def get_method_and_site(method, site : str) -> tuple:
         method = str(method)
     ret = libcoopgamma_native.libcoopgamma_native_get_method_and_site(method, site)
     if isinstance(ret, int):
-        pass # TODO
+        raise ErrorReport.create_error(ret)
     return ret
 
 
@@ -967,7 +1098,7 @@ def get_pid_file(method, site : str) -> str:
         method = str(method)
     ret = libcoopgamma_native.libcoopgamma_native_get_pid_file(method, site)
     if ret is not None and isinstance(ret, int):
-        pass # TODO
+        raise ErrorReport.create_error(ret)
     return ret
 
 
@@ -987,6 +1118,6 @@ def get_socket_file(method, site : str) -> str:
         method = str(method)
     ret = libcoopgamma_native.libcoopgamma_native_get_pid_file(method, site)
     if ret is not None and isinstance(ret, int):
-        pass # TODO
+        raise ErrorReport.create_error(ret)
     return ret
 
