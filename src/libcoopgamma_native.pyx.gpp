@@ -46,17 +46,17 @@ cdef extern from "include-libcoopgamma.h":
 
     ctypedef struct libcoopgamma_ramps_t:
     # Gamma ramp structure
-        size_t red_size
+        size_t u_red_size
         # The number of stops in the red ramp
-        size_t green_size
+        size_t u_green_size
         # The number of stops in the green ramp
-        size_t blue_size
+        size_t u_blue_size
         # The number of stops in the blue ramp
-        void* red
+        void* u_red
         # The red ramp
-        void* green
+        void* u_green
         # The green ramp
-        void* blue
+        void* u_blue
         # The blue ramp
 
     ctypedef struct libcoopgamma_filter_t:
@@ -1446,52 +1446,52 @@ def libcoopgamma_native_get_gamma_recv(address : int, async : int):
             for i in range(int(table.filter_count)):
                 rampsp = &(table.filters[i].ramps)
                 fclass = table.filters[i].fclass
-                red   = [None] * rampsp.red_size
-                green = [None] * rampsp.green_size
-                blue  = [None] * rampsp.blue_size
+                red   = [None] * rampsp.u_red_size
+                green = [None] * rampsp.u_green_size
+                blue  = [None] * rampsp.u_blue_size
                 if table.depth == -2:
-                    for i in range(rampsp.red_size):
-                        red[i] = (<double*>(rampsp.red))[i]
-                    for i in range(rampsp.green_size):
-                        green[i] = (<double*>(rampsp.green))[i]
-                    for i in range(rampsp.blue_size):
-                        blue[i] = (<double*>(rampsp.blue))[i]
+                    for i in range(rampsp.u_red_size):
+                        red[i] = (<double*>(rampsp.u_red))[i]
+                    for i in range(rampsp.u_green_size):
+                        green[i] = (<double*>(rampsp.u_green))[i]
+                    for i in range(rampsp.u_blue_size):
+                        blue[i] = (<double*>(rampsp.u_blue))[i]
                 elif table.depth == -1:
-                    for i in range(rampsp.red_size):
-                        red[i] = (<float*>(rampsp.red))[i]
-                    for i in range(rampsp.green_size):
-                        green[i] = (<float*>(rampsp.green))[i]
-                    for i in range(rampsp.blue_size):
-                        blue[i] = (<float*>(rampsp.blue))[i]
+                    for i in range(rampsp.u_red_size):
+                        red[i] = (<float*>(rampsp.u_red))[i]
+                    for i in range(rampsp.u_green_size):
+                        green[i] = (<float*>(rampsp.u_green))[i]
+                    for i in range(rampsp.u_blue_size):
+                        blue[i] = (<float*>(rampsp.u_blue))[i]
                 elif table.depth == 8:
-                    for i in range(rampsp.red_size):
-                        red[i] = (<uint8_t*>(rampsp.red))[i]
-                    for i in range(rampsp.green_size):
-                        green[i] = (<uint8_t*>(rampsp.green))[i]
-                    for i in range(rampsp.blue_size):
-                        blue[i] = (<uint8_t*>(rampsp.blue))[i]
+                    for i in range(rampsp.u_red_size):
+                        red[i] = (<uint8_t*>(rampsp.u_red))[i]
+                    for i in range(rampsp.u_green_size):
+                        green[i] = (<uint8_t*>(rampsp.u_green))[i]
+                    for i in range(rampsp.u_blue_size):
+                        blue[i] = (<uint8_t*>(rampsp.u_blue))[i]
                 elif table.depth == 16:
-                    for i in range(rampsp.red_size):
-                        red[i] = (<uint16_t*>(rampsp.red))[i]
-                    for i in range(rampsp.green_size):
-                        green[i] = (<uint16_t*>(rampsp.green))[i]
-                    for i in range(rampsp.blue_size):
-                        blue[i] = (<uint16_t*>(rampsp.blue))[i]
+                    for i in range(rampsp.u_red_size):
+                        red[i] = (<uint16_t*>(rampsp.u_red))[i]
+                    for i in range(rampsp.u_green_size):
+                        green[i] = (<uint16_t*>(rampsp.u_green))[i]
+                    for i in range(rampsp.u_blue_size):
+                        blue[i] = (<uint16_t*>(rampsp.u_blue))[i]
                 elif table.depth == 32:
-                    for i in range(rampsp.red_size):
-                        red[i] = (<uint32_t*>(rampsp.red))[i]
-                    for i in range(rampsp.green_size):
-                        green[i] = (<uint32_t*>(rampsp.green))[i]
-                    for i in range(rampsp.blue_size):
-                        blue[i] = (<uint32_t*>(rampsp.blue))[i]
+                    for i in range(rampsp.u_red_size):
+                        red[i] = (<uint32_t*>(rampsp.u_red))[i]
+                    for i in range(rampsp.u_green_size):
+                        green[i] = (<uint32_t*>(rampsp.u_green))[i]
+                    for i in range(rampsp.u_blue_size):
+                        blue[i] = (<uint32_t*>(rampsp.u_blue))[i]
                 elif table.depth == 64:
-                    for i in range(rampsp.red_size):
-                        red[i] = (<uint64_t*>(rampsp.red))[i]
-                    for i in range(rampsp.green_size):
-                        green[i] = (<uint64_t*>(rampsp.green))[i]
-                    for i in range(rampsp.blue_size):
-                        blue[i] = (<uint64_t*>(rampsp.blue))[i]
-                ramps = (rampsp.red_size, rampsp.green_size, rampsp.blue_size, red, green, blue)
+                    for i in range(rampsp.u_red_size):
+                        red[i] = (<uint64_t*>(rampsp.u_red))[i]
+                    for i in range(rampsp.u_green_size):
+                        green[i] = (<uint64_t*>(rampsp.u_green))[i]
+                    for i in range(rampsp.u_blue_size):
+                        blue[i] = (<uint64_t*>(rampsp.u_blue))[i]
+                ramps = (rampsp.u_red_size, rampsp.u_green_size, rampsp.u_blue_size, red, green, blue)
                 filters[i] = (int(table.filters[i].priority), fclass.decode('utf-8', 'strict'), ramps)
             ret = (True, (int(table.red_size), int(table.green_size), int(table.blue_size),
                           int(table.depth), filters))
@@ -1547,52 +1547,52 @@ def libcoopgamma_native_get_gamma_sync(query, address : int):
                 for i in range(int(table.filter_count)):
                     rampsp = &(table.filters[i].ramps)
                     fclass = table.filters[i].fclass
-                    red   = [None] * rampsp.red_size
-                    green = [None] * rampsp.green_size
-                    blue  = [None] * rampsp.blue_size
+                    red   = [None] * rampsp.u_red_size
+                    green = [None] * rampsp.u_green_size
+                    blue  = [None] * rampsp.u_blue_size
                     if table.depth == -2:
-                        for i in range(rampsp.red_size):
-                            red[i] = (<double*>(rampsp.red))[i]
-                        for i in range(rampsp.green_size):
-                            green[i] = (<double*>(rampsp.green))[i]
-                        for i in range(rampsp.blue_size):
-                            blue[i] = (<double*>(rampsp.blue))[i]
+                        for i in range(rampsp.u_red_size):
+                            red[i] = (<double*>(rampsp.u_red))[i]
+                        for i in range(rampsp.u_green_size):
+                            green[i] = (<double*>(rampsp.u_green))[i]
+                        for i in range(rampsp.u_blue_size):
+                            blue[i] = (<double*>(rampsp.u_blue))[i]
                     elif table.depth == -1:
-                        for i in range(rampsp.red_size):
-                            red[i] = (<float*>(rampsp.red))[i]
-                        for i in range(rampsp.green_size):
-                            green[i] = (<float*>(rampsp.green))[i]
-                        for i in range(rampsp.blue_size):
-                            blue[i] = (<float*>(rampsp.blue))[i]
+                        for i in range(rampsp.u_red_size):
+                            red[i] = (<float*>(rampsp.u_red))[i]
+                        for i in range(rampsp.u_green_size):
+                            green[i] = (<float*>(rampsp.u_green))[i]
+                        for i in range(rampsp.u_blue_size):
+                            blue[i] = (<float*>(rampsp.u_blue))[i]
                     elif table.depth == 8:
-                        for i in range(rampsp.red_size):
-                            red[i] = (<uint8_t*>(rampsp.red))[i]
-                        for i in range(rampsp.green_size):
-                            green[i] = (<uint8_t*>(rampsp.green))[i]
-                        for i in range(rampsp.blue_size):
-                            blue[i] = (<uint8_t*>(rampsp.blue))[i]
+                        for i in range(rampsp.u_red_size):
+                            red[i] = (<uint8_t*>(rampsp.u_red))[i]
+                        for i in range(rampsp.u_green_size):
+                            green[i] = (<uint8_t*>(rampsp.u_green))[i]
+                        for i in range(rampsp.u_blue_size):
+                            blue[i] = (<uint8_t*>(rampsp.u_blue))[i]
                     elif table.depth == 16:
-                        for i in range(rampsp.red_size):
-                            red[i] = (<uint16_t*>(rampsp.red))[i]
-                        for i in range(rampsp.green_size):
-                            green[i] = (<uint16_t*>(rampsp.green))[i]
-                        for i in range(rampsp.blue_size):
-                            blue[i] = (<uint16_t*>(rampsp.blue))[i]
+                        for i in range(rampsp.u_red_size):
+                            red[i] = (<uint16_t*>(rampsp.u_red))[i]
+                        for i in range(rampsp.u_green_size):
+                            green[i] = (<uint16_t*>(rampsp.u_green))[i]
+                        for i in range(rampsp.u_blue_size):
+                            blue[i] = (<uint16_t*>(rampsp.u_blue))[i]
                     elif table.depth == 32:
-                        for i in range(rampsp.red_size):
-                            red[i] = (<uint32_t*>(rampsp.red))[i]
-                        for i in range(rampsp.green_size):
-                            green[i] = (<uint32_t*>(rampsp.green))[i]
-                        for i in range(rampsp.blue_size):
-                            blue[i] = (<uint32_t*>(rampsp.blue))[i]
+                        for i in range(rampsp.u_red_size):
+                            red[i] = (<uint32_t*>(rampsp.u_red))[i]
+                        for i in range(rampsp.u_green_size):
+                            green[i] = (<uint32_t*>(rampsp.u_green))[i]
+                        for i in range(rampsp.u_blue_size):
+                            blue[i] = (<uint32_t*>(rampsp.u_blue))[i]
                     elif table.depth == 64:
-                        for i in range(rampsp.red_size):
-                            red[i] = (<uint64_t*>(rampsp.red))[i]
-                        for i in range(rampsp.green_size):
-                            green[i] = (<uint64_t*>(rampsp.green))[i]
-                        for i in range(rampsp.blue_size):
-                            blue[i] = (<uint64_t*>(rampsp.blue))[i]
-                    ramps = (rampsp.red_size, rampsp.green_size, rampsp.blue_size, red, green, blue)
+                        for i in range(rampsp.u_red_size):
+                            red[i] = (<uint64_t*>(rampsp.u_red))[i]
+                        for i in range(rampsp.u_green_size):
+                            green[i] = (<uint64_t*>(rampsp.u_green))[i]
+                        for i in range(rampsp.u_blue_size):
+                            blue[i] = (<uint64_t*>(rampsp.u_blue))[i]
+                    ramps = (rampsp.u_red_size, rampsp.u_green_size, rampsp.u_blue_size, red, green, blue)
                     filters[i] = (int(table.filters[i].priority), fclass.decode('utf-8', 'strict'), ramps)
                 ret = (True, (int(table.red_size), int(table.green_size), int(table.blue_size),
                               int(table.depth), filters))
