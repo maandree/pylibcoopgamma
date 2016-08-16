@@ -1444,7 +1444,7 @@ def libcoopgamma_native_get_gamma_recv(address : int, async : int):
         else:
             filters = [None] * int(table.filter_count)
             for i in range(int(table.filter_count)):
-                rampsp = &(table.filters[i].fclass.ramps)
+                rampsp = &(table.filters[i].ramps)
                 fclass = table.filters[i].fclass
                 red   = [None] * rampsp.red_size
                 green = [None] * rampsp.green_size
@@ -1545,7 +1545,7 @@ def libcoopgamma_native_get_gamma_sync(query, address : int):
             else:
                 filters = [None] * int(table.filter_count)
                 for i in range(int(table.filter_count)):
-                    rampsp = &(table.filters[i].fclass.ramps)
+                    rampsp = &(table.filters[i].ramps)
                     fclass = table.filters[i].fclass
                     red   = [None] * rampsp.red_size
                     green = [None] * rampsp.green_size
