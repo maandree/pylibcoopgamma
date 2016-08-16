@@ -116,13 +116,13 @@ class Ramps:
             self.green = [0] * green
             self.blue  = [0] * blue
     
-    def clone(self) -> Ramps:
+    def clone(self):
         '''
         Create a copy of the instance
         '''
         return Ramps(self.red, self.green, self.blue)
     
-    def __repr__(self) -> str:
+    def __repr__(self):
         '''
         Create a parsable string representation of the instance
         
@@ -148,8 +148,7 @@ class Filter:
     @variable  depth:Depth        The data type and bit-depth of the ramp stops
     @variable  ramps:Ramps        The gamma ramp adjustments of the filter
     '''
-    def __init__(self, priority : int = None, crtc : str = None, fclass : str = None,
-                 lifespan : Lifespan = None, depth : Depth = None, ramps : Ramps = None):
+    def __init__(self, priority = None, crtc = None, fclass = None, lifespan = None, depth = None, ramps = None):
         '''
         Constructor
         
@@ -172,7 +171,7 @@ class Filter:
         self.depth = depth
         self.ramps = ramps
     
-    def clone(self, shallow = False) -> Filter:
+    def clone(self, shallow = False):
         '''
         Create a copy of the instance
         
@@ -181,7 +180,7 @@ class Filter:
         ramps = self.ramps if shallow else self.ramps.clone()
         return Filter(self.priority, self.crtc, self.fclass, self.lifespan, self.depth, ramps)
     
-    def __repr__(self) -> str:
+    def __repr__(self):
         '''
         Create a parsable string representation of the instance
         
@@ -210,13 +209,13 @@ class GamutPoint:
         self.x_raw, self.x = x, x / 1024
         self.y_raw, self.y = y, y / 1024
     
-    def clone(self) -> GamutPoint:
+    def clone(self):
         '''
         Create a copy of the instance
         '''
         return GamutPoint(self.x_raw, self.y_raw)
     
-    def __repr__(self) -> str:
+    def __repr__(self):
         '''
         Create a parsable string representation of the instance
         
@@ -234,7 +233,7 @@ class Gamut:
     @variable  green:GamutPoint  The green stimuli
     @variable  blue:GamutPoint   The blue stimuli
     '''
-    def __init__(self, red : GamutPoint = None, green : GamutPoint = None, blue : GamutPoint = None):
+    def __init__(self, red = None, green = None, blue = None):
         '''
         Constructor
         
@@ -246,7 +245,7 @@ class Gamut:
         self.green = GamutPoint(*green) if isinstance(green, tuple) else green
         self.blue  = GamutPoint(*blue)  if isinstance(blue,  tuple) else blue
     
-    def clone(self, shallow = True) -> Gamut:
+    def clone(self, shallow = True):
         '''
         Create a copy of the instance
         
@@ -256,7 +255,7 @@ class Gamut:
             return Gamut(self.red, self.green, self.blue)
         return Gamut(self.red.clone(), self.green.clone(), self.blue.clone())
     
-    def __repr__(self) -> str:
+    def __repr__(self):
         '''
         Create a parsable string representation of the instance
         
@@ -285,9 +284,8 @@ class CRTCInfo:
                                         is not RGB (or sRGB), there is something
                                         wrong. Always check the colourspace.
     '''
-    def __init__(self, cooperative : bool = None, depth : Depth = None, supported : Support = None,
-                 red_size : int = None, green_size : int = None, blue_size : int = None,
-                 colourspace : Colourspace = None, gamut : Gamut = None):
+    def __init__(self, cooperative = None, depth = None, supported = None, red_size = None,
+                 green_size = None, blue_size = None, colourspace = None, gamut = None):
         '''
         Constructor
         
@@ -315,7 +313,7 @@ class CRTCInfo:
         else:
             self.gamut = Gamut(*gamut)
     
-    def make_ramps(self) -> Ramps:
+    def make_ramps(self):
         '''
         Construct a `Ramps` instances for this CRTC
         
@@ -324,7 +322,7 @@ class CRTCInfo:
         '''
         return Ramps(self.red_size, self.green_size, self.blue_size)
     
-    def clone(self, shallow = True) -> CRTCInfo:
+    def clone(self, shallow = True):
         '''
         Create a copy of the instance
         
@@ -334,7 +332,7 @@ class CRTCInfo:
                         self.green_size, self.blue_size, self.colourspace,
                         self.gamut if shallow else self.gamut.clone())
     
-    def __repr__(self) -> str:
+    def __repr__(self):
         '''
         Create a parsable string representation of the instance
         
@@ -356,7 +354,7 @@ class FilterQuery:
     @variable  crtc:str           The CRTC for which the the current filters shall returned
     @variable  coalesce:bool      Whether to coalesce all filters into one gamma ramp triplet
     '''
-    def __init__(self, high_priority : int, low_priority : int, crtc : str, coalesce : bool):
+    def __init__(self, high_priority, low_priority, crtc, coalesce):
         '''
         Constructor
         
@@ -372,13 +370,13 @@ class FilterQuery:
         self.crtc = crtc
         self.coalesce = coalesce
     
-    def clone(self) -> FilterQuery:
+    def clone(self):
         '''
         Create a copy of the instance
         '''
         return FilterQuery(self.high_priority, self.low_priority, self.crtc, self.coalesce)
     
-    def __repr__(self) -> str:
+    def __repr__(self):
         '''
         Create a parsable string representation of the instance
         
@@ -397,7 +395,7 @@ class QueriedFilter:
     @variable  fclass:str    The filter's class
     @variable  ramps:Ramps   The gamma ramp adjustments of the filter
     '''
-    def __init__(self, priority : int = None, fclass : str = None, ramps : Ramps = None):
+    def __init__(self, priority = None, fclass = None, ramps = None):
         '''
         Constructor
         
@@ -411,7 +409,7 @@ class QueriedFilter:
             self.ramps = Ramps(*ramps) if isinstance(ramps, tuple) else ramps
         self.ramps = None
     
-    def clone(self, shallow = False) -> QueriedFilter:
+    def clone(self, shallow = False):
         '''
         Create a copy of the instance
         
@@ -420,7 +418,7 @@ class QueriedFilter:
         ramps = self.ramps if shallow else self.ramps.clone()
         return QueriedFilter(self.priority, self.fclass, ramps)
     
-    def __repr__(self) -> str:
+    def __repr__(self):
         '''
         Create a parsable string representation of the instance
         
@@ -446,8 +444,7 @@ class FilterTable:
                                             be exactly one filter and `filters[0].class`
                                             and `filters[0].priority` are undefined.
     '''
-    def __init__(self, red_size : int = None, green_size : int = None, blue_size : int = None,
-                 depth : Depth = None, filters : list = None):
+    def __init__(self, red_size = None, green_size = None, blue_size = None, depth = None, filters = None):
         '''
         Constructor 
         
@@ -471,7 +468,7 @@ class FilterTable:
         else:
             self.filters    = list(QueriedFilter(*f) if isinstance(f, tuple) else f for f in filters)
     
-    def make_ramps(self) -> Ramps:
+    def make_ramps(self):
         '''
         Construct a `Ramps` instances for this CRTC
         
@@ -480,7 +477,7 @@ class FilterTable:
         '''
         return Ramps(self.red_size, self.green_size, self.blue_size)
     
-    def clone(self, shallow = False) -> FilterTable:
+    def clone(self, shallow = False):
         '''
         Create a copy of the instance
         
@@ -489,7 +486,7 @@ class FilterTable:
         filters = list(self.filters) if shallow else [f.clone() for f in self.filters]
         return FilterTable(self.red_size, self.green_size, self.blue_size, self.depth, filters)
     
-    def __repr__(self) -> str:
+    def __repr__(self):
         '''
         Create a parsable string representation of the instance
         
@@ -509,8 +506,7 @@ class ErrorReport:
     @variable  server_side:bool  Did the error occur on the server-side?
     @variable  description:str?  Error message, can be `None` if `custom` is false
     '''
-    def __init__(self, number : int = None, custom : bool = None,
-                 server_side : bool = None, description : str = None):
+    def __init__(self, number = None, custom = None, server_side = None, description = None):
         '''
         Constructor
         
@@ -525,13 +521,13 @@ class ErrorReport:
         self.server_side = server_side
         self.description = description
     
-    def clone(self) -> ErrorReport:
+    def clone(self):
         '''
         Create a copy of the instance
         '''
         return ErrorReport(self.number, self.custom, self.server_side, self.description)
     
-    def __repr__(self) -> str:
+    def __repr__(self):
         '''
         Create a parsable string representation of the instance
         
@@ -550,6 +546,9 @@ class ErrorReport:
         if isinstance(error, int):
             import os
             return OSError(error, os.strerror(error))
+        elif not error.custom and not error.server_side:
+            import os
+            return OSError(error.number, os.strerror(error))
         else:
             return LibcoopgammaError(ErrorReport(*error))
 
@@ -560,7 +559,7 @@ class LibcoopgammaError(Exception):
     
     @variable  error:ErrorReport  Error information
     '''
-    def __init__(self, error : ErrorReport):
+    def __init__(self, error):
         '''
         Constructor
         
@@ -568,7 +567,7 @@ class LibcoopgammaError(Exception):
         '''
         self.error = error
     
-    def __str__(self) -> str:
+    def __str__(self):
         '''
         Return description and error number as a string
         
@@ -582,7 +581,7 @@ class LibcoopgammaError(Exception):
         else:
             return '#%i' % self.error.number
     
-    def __repr__(self) -> str:
+    def __repr__(self):
         '''
         Create a parsable string representation of the instance
         
@@ -601,7 +600,7 @@ class IncompatibleDowngradeError(Exception):
         '''
         pass
     
-    def __str__(self) -> str:
+    def __str__(self):
         '''
         Return descriptor of the error
         
@@ -609,7 +608,7 @@ class IncompatibleDowngradeError(Exception):
         '''
         return 'Incompatible downgrade error'
     
-    def __repr__(self) -> str:
+    def __repr__(self):
         '''
         Create a parsable string representation of the instance
         
@@ -628,7 +627,7 @@ class IncompatibleUpgradeError(Exception):
         '''
         pass
     
-    def __str__(self) -> str:
+    def __str__(self):
         '''
         Return descriptor of the error
         
@@ -636,7 +635,7 @@ class IncompatibleUpgradeError(Exception):
         '''
         return 'Incompatible downgrade error'
     
-    def __repr__(self) -> str:
+    def __repr__(self):
         '''
         Create a parsable string representation of the instance
         
@@ -655,7 +654,7 @@ class ServerInitialisationError(Exception):
         '''
         pass
     
-    def __str__(self) -> str:
+    def __str__(self):
         '''
         Return descriptor of the error
         
@@ -663,7 +662,7 @@ class ServerInitialisationError(Exception):
         '''
         return 'Server initialisation error'
     
-    def __repr__(self) -> str:
+    def __repr__(self):
         '''
         Create a parsable string representation of the instance
         
@@ -681,7 +680,7 @@ class Context:
     
     @variable  fd:int  File descriptor for the socket
     '''
-    def __init__(self, fd : int = -1, buf : bytes = None):
+    def __init__(self, fd = -1, buf = None):
         '''
         Constructor
         
@@ -709,7 +708,7 @@ class Context:
         '''
         libcoopgamma_native.libcoopgamma_native_context_free(self.address)
     
-    def __repr__(self) -> str:
+    def __repr__(self):
         '''
         Create a parsable string representation of the instance
         
@@ -721,7 +720,7 @@ class Context:
         params = (self.fd, data)
         return 'libcoopgamma.Context(%s)' % ', '.join(repr(p) for p in params)
     
-    def connect(self, method, site : str):
+    def connect(self, method, site):
         '''
         Connect to a coopgamma server, and start it if necessary
         
@@ -759,7 +758,7 @@ class Context:
         '''
         libcoopgamma_native.libcoopgamma_native_context_set_fd(self.address, self.fd)
     
-    def set_nonbreaking(self, nonbreaking : bool):
+    def set_nonbreaking(self, nonbreaking):
         '''
         By default communication is blocking, this function
         can be used to switch between blocking and nonblocking
@@ -787,7 +786,7 @@ class Context:
         if error != 0:
             raise ErrorReport.create_error(error)
     
-    def synchronise(self, pending : list) -> int:
+    def synchronise(self, pending):
         '''
         Wait for the next message to be received
         
@@ -817,7 +816,7 @@ class Context:
         '''
         libcoopgamma_native.libcoopgamma_native_skip_message(self.address)
     
-    def get_crtcs_send(self) -> AsyncContext:
+    def get_crtcs_send(self):
         '''
         List all available CRTC:s, send request part
         
@@ -831,7 +830,7 @@ class Context:
             raise ErrorReport.create_error(error)
         return async
     
-    def get_crtcs_recv(self, async : AsyncContext) -> list:
+    def get_crtcs_recv(self, async):
         '''
         List all available CRTC:s, receive response part
         
@@ -845,7 +844,7 @@ class Context:
             raise ErrorReport.create_error(ret)
         return ret
     
-    def get_crtcs_sync(self) -> list:
+    def get_crtcs_sync(self):
         '''
         List all available CRTC:s, synchronous version
         
@@ -862,7 +861,7 @@ class Context:
             raise ErrorReport.create_error(ret)
         return ret
     
-    def get_gamma_info_send(self, crtc : str) -> AsyncContext:
+    def get_gamma_info_send(self, crtc):
         '''
         Retrieve information about a CRTC:s gamma ramps, send request part
         
@@ -878,7 +877,7 @@ class Context:
             raise ErrorReport.create_error(value)
         return async
     
-    def get_gamma_info_recv(self, async : AsyncContext) -> CRTCInfo:
+    def get_gamma_info_recv(self, async):
         '''
         Retrieve information about a CRTC:s gamma ramps, receive response part
         
@@ -893,7 +892,7 @@ class Context:
             raise ErrorReport.create_error(value)
         return CRTCInfo(*value)
     
-    def get_gamma_info_sync(self, crtc : str) -> CRTCInfo:
+    def get_gamma_info_sync(self, crtc):
         '''
         Retrieve information about a CRTC:s gamma ramps, synchronous version
         
@@ -913,7 +912,7 @@ class Context:
             raise ErrorReport.create_error(value)
         return CRTCInfo(*value)
     
-    def get_gamma_send(self, query : FilterQuery) -> AsyncContext:
+    def get_gamma_send(self, query):
         '''
         Retrieve the current gamma ramp adjustments, send request part
         
@@ -929,7 +928,7 @@ class Context:
             raise ErrorReport.create_error(value)
         return async
     
-    def get_gamma_recv(self, async : AsyncContext) -> FilterTable:
+    def get_gamma_recv(self, async):
         '''
         Retrieve the current gamma ramp adjustments, receive response part
         
@@ -944,7 +943,7 @@ class Context:
             raise ErrorReport.create_error(value)
         return FilterTable(*value)
     
-    def get_gamma_sync(self, query : FilterQuery) -> FilterTable:
+    def get_gamma_sync(self, query):
         '''
         Retrieve the current gamma ramp adjustments, synchronous version
         
@@ -964,7 +963,7 @@ class Context:
             raise ErrorReport.create_error(value)
         return FilterTable(*value)
     
-    def set_gamma_send(self, filtr : Filter) -> AsyncContext:
+    def set_gamma_send(self, filtr):
         '''
         Apply, update, or remove a gamma ramp adjustment, send request part
         
@@ -980,7 +979,7 @@ class Context:
             raise ErrorReport.create_error(error)
         return async
     
-    def set_gamma_recv(self, async : AsyncContext):
+    def set_gamma_recv(self, async):
         '''
         Apply, update, or remove a gamma ramp adjustment, receive response part
         
@@ -990,7 +989,7 @@ class Context:
         if error is not None:
             raise ErrorReport.create_error(error)
     
-    def set_gamma_sync(self, filtr : Filter):
+    def set_gamma_sync(self, filtr):
         '''
         Apply, update, or remove a gamma ramp adjustment, synchronous version
         
@@ -1011,7 +1010,7 @@ class AsyncContext:
     '''
     Information necessary to identify and parse a response from the server
     '''
-    def __init__(self, buf : bytes = None):
+    def __init__(self, buf = None):
         '''
         Constructor
         
@@ -1037,7 +1036,7 @@ class AsyncContext:
         '''
         libcoopgamma_native.libcoopgamma_native_async_context_free(self.address)
     
-    def __repr__(self) -> str:
+    def __repr__(self):
         '''
         Create a parsable string representation of the instance
         
@@ -1049,7 +1048,7 @@ class AsyncContext:
         return 'libcoopgamma.AsyncContext(%s)' % repr(data)
 
 
-def get_methods() -> list:
+def get_methods():
     '''
     List all recognised adjustment method
     
@@ -1064,7 +1063,7 @@ def get_methods() -> list:
     return ret
 
 
-def get_method_and_site(method, site : str) -> tuple:
+def get_method_and_site(method = None, site = None):
     '''
     Get the adjustment method and site
     
@@ -1086,7 +1085,7 @@ def get_method_and_site(method, site : str) -> tuple:
     return ret
 
 
-def get_pid_file(method, site : str) -> str:
+def get_pid_file(method = None, site = None):
     '''
     Get the PID file of the coopgamma server
     
@@ -1105,7 +1104,7 @@ def get_pid_file(method, site : str) -> str:
     return ret
 
 
-def get_socket_file(method, site : str) -> str:
+def get_socket_file(method = None, site = None):
     '''
     Get the socket file of the coopgamma server
     

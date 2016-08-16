@@ -812,8 +812,10 @@ def libcoopgamma_native_get_methods():
         while methods[i] is not NULL:
             bs = methods[i]
             ret.append(bs.decode('utf-8', 'strict'))
+            i += 1
     finally:
         free(methods)
+    return ret
 
 
 def libcoopgamma_native_get_method_and_site(method : str, site : str):
@@ -831,13 +833,25 @@ def libcoopgamma_native_get_method_and_site(method : str, site : str):
                                  selected automatically, the selected site (the second
                                  element in the returned tuple) will be `None`.
     '''
+    cdef char* cmethod = NULL
+    cdef char* csite = NULL
     cdef char* rcsmethod = NULL
     cdef char* rcssite = NULL
     cdef bytes rbsmethod
     cdef bytes rbssite
     try:
+        if method is not None:
+            buf = method.encode('utf-8')
+            cmethod = <char*>malloc(len(buf) * sizeof(char))
+            for i in range(len(buf)):
+                cmethod[i] = <char>(buf[i])
+        if site is not None:
+            buf = site.encode('utf-8')
+            csite = <char*>malloc(len(buf) * sizeof(char))
+            for i in range(len(buf)):
+                csite[i] = <char>(buf[i])
         rmethod, rsite = None, None
-        if libcoopgamma_get_method_and_site(method, site, &rcsmethod, &rcssite) < 0:
+        if libcoopgamma_get_method_and_site(cmethod, csite, &rcsmethod, &rcssite) < 0:
             return int(errno)
         rbsmethod = rcsmethod
         rmethod = rbsmethod.decode('utf-8', 'strict')
@@ -846,6 +860,8 @@ def libcoopgamma_native_get_method_and_site(method : str, site : str):
             rsite = rbssite.decode('utf-8', 'strict')
         return (rmethod, rsite)
     finally:
+        free(cmethod)
+        free(csite)
         free(rcsmethod)
         free(rcssite)
 
@@ -867,16 +883,18 @@ def libcoopgamma_native_get_pid_file(method : str, site : str):
     cdef char* path = NULL
     cdef bytes bs
     try:
-        buf = method.encode('utf-8')
-        cmethod = <char*>malloc(len(buf) * sizeof(char))
-        for i in range(len(buf)):
-            cmethod[i] = <char>(buf[i])
-        buf = site.encode('utf-8')
-        csite = <char*>malloc(len(buf) * sizeof(char))
-        for i in range(len(buf)):
-            csite[i] = <char>(buf[i])
+        if method is not None:
+            buf = method.encode('utf-8')
+            cmethod = <char*>malloc(len(buf) * sizeof(char))
+            for i in range(len(buf)):
+                cmethod[i] = <char>(buf[i])
+        if site is not None:
+            buf = site.encode('utf-8')
+            csite = <char*>malloc(len(buf) * sizeof(char))
+            for i in range(len(buf)):
+                csite[i] = <char>(buf[i])
         path = libcoopgamma_get_pid_file(cmethod, csite)
-        if errno != 0 and path is not NULL:
+        if path is not NULL or errno == 0:
             bs = path
             return bs.decode('utf-8', 'strict')
     finally:
@@ -904,16 +922,18 @@ def libcoopgamma_native_get_socket_file(method : str, site : str):
     cdef char* path = NULL
     cdef bytes bs
     try:
-        buf = method.encode('utf-8')
-        cmethod = <char*>malloc(len(buf) * sizeof(char))
-        for i in range(len(buf)):
-            cmethod[i] = <char>(buf[i])
-        buf = site.encode('utf-8')
-        csite = <char*>malloc(len(buf) * sizeof(char))
-        for i in range(len(buf)):
-            csite[i] = <char>(buf[i])
+        if method is not None:
+            buf = method.encode('utf-8')
+            cmethod = <char*>malloc(len(buf) * sizeof(char))
+            for i in range(len(buf)):
+                cmethod[i] = <char>(buf[i])
+        if site is not None:
+            buf = site.encode('utf-8')
+            csite = <char*>malloc(len(buf) * sizeof(char))
+            for i in range(len(buf)):
+                csite[i] = <char>(buf[i])
         path = libcoopgamma_get_socket_file(cmethod, csite)
-        if errno != 0 and path is not NULL:
+        if path is not NULL or errno == 0:
             bs = path
             return bs.decode('utf-8', 'strict')
     finally:
@@ -1003,7 +1023,7 @@ def libcoopgamma_native_context_unmarshal(buf : bytes):
         ret0 = <int>libcoopgamma_context_unmarshal(this, bs, &ret1)
         return (ret0, <int>ret1)
     finally:
-        libcoopgamma_context_destroy(this, 1)
+        libcoopgamma_context_destroy(this, <int>1)
         free(this)
         free(bs)
 
