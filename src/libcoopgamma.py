@@ -447,7 +447,7 @@ class FilterTable:
                                             and `filters[0].priority` are undefined.
     '''
     def __init__(self, red_size : int = None, green_size : int = None, blue_size : int = None,
-                 depth : Depth = None, filters : list):
+                 depth : Depth = None, filters : list = None):
         '''
         Constructor 
         
@@ -466,7 +466,10 @@ class FilterTable:
         self.green_size = green_size
         self.blue_size  = blue_size
         self.depth      = depth
-        self.filters    = list(QueriedFilter(*f) if isinstance(f, tuple) else f for f in filters)
+        if filters is None:
+            self.filters
+        else:
+            self.filters    = list(QueriedFilter(*f) if isinstance(f, tuple) else f for f in filters)
     
     def make_ramps(self) -> Ramps:
         '''
@@ -939,7 +942,7 @@ class Context:
         (successful, value) = value
         if successful:
             raise ErrorReport.create_error(value)
-        return FilterTable:(*value)
+        return FilterTable(*value)
     
     def get_gamma_sync(self, query : FilterQuery) -> FilterTable:
         '''
