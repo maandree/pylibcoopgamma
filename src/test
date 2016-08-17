@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this library.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-import os, sys
+import os, sys, time
 
 os.chdir('/'.join(sys.argv[0].split('/')[:-1]))
 sys.path.append('../bin')
@@ -65,8 +65,90 @@ for crtc in g.get_crtcs_sync():
     print(crtc)
 print()
 
-print(g.get_gamma_info_sync(crtc))
-print(g.get_gamma_sync(cg.FilterQuery(crtc = crtc)))
+info = g.get_gamma_info_sync(crtc)
+print('\033[1m%s:\033[m' % 'CRTC info')
+print('Cooperative:', 'yes' if info.cooperative else 'no')
+if info.depth is not None:
+    print('Depth:', cg.Depth.str(info.depth))
+print('Supported:', cg.Support.str(info.supported))
+if info.red_size is not None:
+    print('Red stops:', info.red_size)
+if info.green_size is not None:
+    print('Green stops:', info.green_size)
+if info.blue_size is not None:
+    print('Blue stops:', info.blue_size)
+print('Colourspace:', cg.Colourspace.str(info.colourspace))
+if info.gamut is not None:
+    print('Red point:', str(info.gamut.red))
+    print('Green point:', str(info.gamut.green))
+    print('Blue point:', str(info.gamut.blue))
+    print('White point:', str(info.gamut.white))
+print()
+
+table = g.get_gamma_sync(cg.FilterQuery(crtc = crtc, coalesce = False))
+print('\033[1m%s:\033[m' % 'Filter table')
+print('Red stops:', table.red_size)
+print('Green stops:', table.green_size)
+print('Blue stops:', table.blue_size)
+print('Depth:', cg.Depth.str(table.depth))
+for i, fltr in enumerate(table.filters):
+    print('Filter %i:' % i)
+    print('  Priority:', fltr.priority)
+    print('  Class:', fltr.fclass)
+    print('  Ramps:')
+    rr, gr, br = fltr.ramps.red, fltr.ramps.green, fltr.ramps.blue
+    n = max(len(rr), len(gr), len(br))
+    fmt = '    \033[31m%s \033[32m%s \033[34m%s\033[m'
+    rr = [str(rr[i]) if i < len(rr) else '' for i in range(n)]
+    gr = [str(gr[i]) if i < len(gr) else '' for i in range(n)]
+    br = [str(br[i]) if i < len(br) else '' for i in range(n)]
+    for y in zip(rr, gr, br):
+        print(fmt % y)
+print()
+
+table = g.get_gamma_sync(cg.FilterQuery(crtc = crtc, coalesce = True))
+print('\033[1m%s:\033[m' % 'Filter table')
+print('Red stops:', table.red_size)
+print('Green stops:', table.green_size)
+print('Blue stops:', table.blue_size)
+print('Depth:', cg.Depth.str(table.depth))
+for fltr in table.filters:
+    print('Ramps:')
+    rr, gr, br = fltr.ramps.red, fltr.ramps.green, fltr.ramps.blue
+    n = max(len(rr), len(gr), len(br))
+    fmt = '  \033[31m%s \033[32m%s \033[34m%s\033[m'
+    rr = [str(rr[i]) if i < len(rr) else '' for i in range(n)]
+    gr = [str(gr[i]) if i < len(gr) else '' for i in range(n)]
+    br = [str(br[i]) if i < len(br) else '' for i in range(n)]
+    for y in zip(rr, gr, br):
+        print(fmt % y)
+print()
+
+fltr = cg.Filter(0, crtc, 'pylibcoopgamma::test::test', cg.Lifespan.UNTIL_DEATH, table.depth,
+                 cg.Ramps(table.red_size, table.green_size, table.blue_size))
+
+if table.depth < 0:
+    Y = lambda x : x
+else:
+    m = 2 ** table.depth - 1
+    Y = lambda x : int(x * m)
+
+redzero = fltr.ramps.red
+greenzero = fltr.ramps.green
+
+fltr.ramps.red = [Y(x / (table.red_size - 1)) for x in range(table.red_size)]
+g.set_gamma_sync(fltr)
+time.sleep(0.5)
+
+fltr.ramps.red = redzero
+fltr.ramps.green = [Y(x / (table.green_size - 1)) for x in range(table.green_size)]
+g.set_gamma_sync(fltr)
+time.sleep(0.5)
+
+fltr.ramps.green = greenzero
+fltr.ramps.blue = [Y(x / (table.blue_size - 1)) for x in range(table.blue_size)]
+g.set_gamma_sync(fltr)
+time.sleep(0.5)
 
 del g
 

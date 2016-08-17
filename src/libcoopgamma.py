@@ -31,6 +31,22 @@ class Support(enum.IntEnum):
     NO = 0
     MAYBE = 1
     YES = 2
+    
+    @staticmethod
+    def str(v):
+        '''
+        Get string representation of a value
+        
+        @param   v:int  The value, must be value of the enum
+        @return  :str   Human-readable string representation of the value
+        '''
+        if v == Support.NO:
+            return 'no'
+        if v == Support.YES:
+            return 'yes'
+        if v == Support.MAYBE:
+            return 'maybe'
+        raise ValueError()
 
 
 class Depth(enum.IntEnum):
@@ -53,6 +69,28 @@ class Depth(enum.IntEnum):
     UINT64 = 64
     FLOAT = -1
     DOUBLE = -2
+    
+    @staticmethod
+    def str(v):
+        '''
+        Get string representation of a value
+        
+        @param   v:int  The value, must be value of the enum
+        @return  :str   Human-readable string representation of the value
+        '''
+        if v == Depth.UINT8:
+            return '8-bits'
+        if v == Depth.UINT16:
+            return '16-bits'
+        if v == Depth.UINT32:
+            return '326-bits'
+        if v == Depth.UINT64:
+            return '64-bits'
+        if v == Depth.FLOAT:
+            return 'single-precision floating-point'
+        if v == Depth.DOUBLE:
+            return 'double-precision floating-point'
+        raise ValueError()
 
 
 class Lifespan(enum.IntEnum):
@@ -66,6 +104,22 @@ class Lifespan(enum.IntEnum):
     REMOVE = 0
     UNTIL_DEATH = 1
     UNTIL_REMOVAL = 2
+    
+    @staticmethod
+    def str(v):
+        '''
+        Get string representation of a value
+        
+        @param   v:int  The value, must be value of the enum
+        @return  :str   Human-readable string representation of the value
+        '''
+        if v == Lifespan.REMOVE:
+            return 'remove'
+        if v == Lifespan.UNTIL_DEATH:
+            return 'until death'
+        if v == Lifespan.UNTIL_REMOVAL:
+            return 'until removal'
+        raise ValueError()
 
 
 class Colourspace(enum.IntEnum):
@@ -83,6 +137,26 @@ class Colourspace(enum.IntEnum):
     RGB = 2
     NON_RGB = 3
     GREY = 4
+    
+    @staticmethod
+    def str(v):
+        '''
+        Get string representation of a value
+        
+        @param   v:int  The value, must be value of the enum
+        @return  :str   Human-readable string representation of the value
+        '''
+        if v == Colourspace.UNKNOWN:
+            return 'unknown'
+        if v == Colourspace.SRGB:
+            return 'sRGB'
+        if v == Colourspace.RGB:
+            return 'RGB'
+        if v == Colourspace.NON_RGB:
+            return 'non-RGB'
+        if v == Colourspace.GREY:
+            return 'greyscale'
+        raise ValueError()
 
 
 class Ramps:
@@ -223,6 +297,14 @@ class GamutPoint:
         '''
         params = (self.x_raw, self.y_raw)
         return 'libcoopgamma.GamutPoint(%s)' % ', '.join(repr(p) for p in params)
+    
+    def __str__(self):
+        '''
+        Get human-readable string representation of instance
+        
+        @return  :str  Human-readable string representation of instance
+        '''
+        return '(%f, %f)' % (self.x, self.y)
 
 
 class Gamut:
@@ -409,9 +491,9 @@ class QueriedFilter:
         '''
         self.priority = priority
         self.fclass = fclass
+        self.ramps = None
         if ramps is not None:
             self.ramps = Ramps(*ramps) if isinstance(ramps, tuple) else ramps
-        self.ramps = None
     
     def clone(self, shallow = False):
         '''
@@ -553,7 +635,7 @@ class ErrorReport:
         error = ErrorReport(*error)
         if not error.custom and not error.server_side:
             import os
-            return OSError(error.number, os.strerror(error))
+            return OSError(error.number, os.strerror(error.number))
         else:
             return LibcoopgammaError(error)
 
