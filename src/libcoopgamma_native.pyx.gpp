@@ -841,12 +841,12 @@ def libcoopgamma_native_get_method_and_site(method : str, site : str):
     cdef bytes rbssite
     try:
         if method is not None:
-            buf = method.encode('utf-8')
+            buf = method.encode('utf-8') + bytes([0])
             cmethod = <char*>malloc(len(buf) * sizeof(char))
             for i in range(len(buf)):
                 cmethod[i] = <char>(buf[i])
         if site is not None:
-            buf = site.encode('utf-8')
+            buf = site.encode('utf-8') + bytes([0])
             csite = <char*>malloc(len(buf) * sizeof(char))
             for i in range(len(buf)):
                 csite[i] = <char>(buf[i])
@@ -884,12 +884,12 @@ def libcoopgamma_native_get_pid_file(method : str, site : str):
     cdef bytes bs
     try:
         if method is not None:
-            buf = method.encode('utf-8')
+            buf = method.encode('utf-8') + bytes([0])
             cmethod = <char*>malloc(len(buf) * sizeof(char))
             for i in range(len(buf)):
                 cmethod[i] = <char>(buf[i])
         if site is not None:
-            buf = site.encode('utf-8')
+            buf = site.encode('utf-8') + bytes([0])
             csite = <char*>malloc(len(buf) * sizeof(char))
             for i in range(len(buf)):
                 csite[i] = <char>(buf[i])
@@ -923,12 +923,12 @@ def libcoopgamma_native_get_socket_file(method : str, site : str):
     cdef bytes bs
     try:
         if method is not None:
-            buf = method.encode('utf-8')
+            buf = method.encode('utf-8') + bytes([0])
             cmethod = <char*>malloc(len(buf) * sizeof(char))
             for i in range(len(buf)):
                 cmethod[i] = <char>(buf[i])
         if site is not None:
-            buf = site.encode('utf-8')
+            buf = site.encode('utf-8') + bytes([0])
             csite = <char*>malloc(len(buf) * sizeof(char))
             for i in range(len(buf)):
                 csite[i] = <char>(buf[i])
@@ -1310,7 +1310,7 @@ def libcoopgamma_native_get_gamma_info_send(crtc : str, address : int, async : i
     cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
     cdef char* ccrtc = NULL
     try:
-        bs = crtc.encode('utf-8')
+        bs = crtc.encode('utf-8') + bytes([0])
         ccrtc = <char*>malloc(len(bs) * sizeof(char))
         if ccrtc is NULL:
             return int(errno)
@@ -1380,7 +1380,7 @@ def libcoopgamma_native_get_gamma_info_sync(crtc : str, address : int):
     try:
         if libcoopgamma_crtc_info_initialise(&info) < 0:
             return int(errno)
-        bscrtc = crtc.encode('utf-8')
+        bscrtc = crtc.encode('utf-8') + bytes([0])
         ccrtc = <char*>malloc(len(bscrtc) * sizeof(bscrtc))
         for i in range(len(bscrtc)):
             ccrtc[i] = <char>(bscrtc[i])
