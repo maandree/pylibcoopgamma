@@ -232,18 +232,21 @@ class Gamut:
     @variable  red:GamutPoint    The red stimuli
     @variable  green:GamutPoint  The green stimuli
     @variable  blue:GamutPoint   The blue stimuli
+    @variable  white:GamutPoint  The default whitepoint
     '''
-    def __init__(self, red = None, green = None, blue = None):
+    def __init__(self, red = None, green = None, blue = None, white = None):
         '''
         Constructor
         
         @param  red:GamutPoint|(int, int)    The red stimuli
         @param  green:GamutPoint|(int, int)  The green stimuli
         @param  blue:GamutPoint|(int, int)   The blue stimuli
+        @param  white:GamutPoint|(int, int)  The default whitepoint
         '''
         self.red   = GamutPoint(*red)   if isinstance(red,   tuple) else red
         self.green = GamutPoint(*green) if isinstance(green, tuple) else green
         self.blue  = GamutPoint(*blue)  if isinstance(blue,  tuple) else blue
+        self.white = GamutPoint(*white) if isinstance(white, tuple) else white
     
     def clone(self, shallow = True):
         '''
@@ -252,8 +255,8 @@ class Gamut:
         @param  shallow:bool  Create a shallow copy?
         '''
         if shallow:
-            return Gamut(self.red, self.green, self.blue)
-        return Gamut(self.red.clone(), self.green.clone(), self.blue.clone())
+            return Gamut(self.red, self.green, self.blue, self.white)
+        return Gamut(self.red.clone(), self.green.clone(), self.blue.clone(), self.white.clone())
     
     def __repr__(self):
         '''
@@ -261,7 +264,7 @@ class Gamut:
         
         @return  :str  Parsable representation of the instance
         '''
-        params = (repr(self.red), repr(self.green), repr(self.blue))
+        params = (repr(self.red), repr(self.green), repr(self.blue), repr(self.white))
         return 'libcoopgamma.Gamut(%s)' % ', '.join(repr(p) for p in params)
 
 
@@ -354,7 +357,8 @@ class FilterQuery:
     @variable  crtc:str           The CRTC for which the the current filters shall returned
     @variable  coalesce:bool      Whether to coalesce all filters into one gamma ramp triplet
     '''
-    def __init__(self, high_priority, low_priority, crtc, coalesce):
+    def __init__(self, high_priority = 9223372036854775807,
+                 low_priority = -9223372036854775808, crtc = None, coalesce = False):
         '''
         Constructor
         
@@ -546,11 +550,12 @@ class ErrorReport:
         if isinstance(error, int):
             import os
             return OSError(error, os.strerror(error))
-        elif not error.custom and not error.server_side:
+        error = ErrorReport(*error)
+        if not error.custom and not error.server_side:
             import os
             return OSError(error.number, os.strerror(error))
         else:
-            return LibcoopgammaError(ErrorReport(*error))
+            return LibcoopgammaError(error)
 
 
 class LibcoopgammaError(Exception):
@@ -687,6 +692,7 @@ class Context:
         @param  fd:int      File descriptor for the socket
         @param  buf:bytes?  Buffer to unmarshal
         '''
+        self.address = None
         self.fd = fd
         if buf is None:
             (successful, value) = libcoopgamma_native.libcoopgamma_native_context_create()
@@ -706,7 +712,8 @@ class Context:
         '''
         Destructor
         '''
-        libcoopgamma_native.libcoopgamma_native_context_free(self.address)
+        if self.address is not None:
+            libcoopgamma_native.libcoopgamma_native_context_free(self.address)
     
     def __repr__(self):
         '''
@@ -873,7 +880,7 @@ class Context:
         async = AsyncContext()
         (successful, value) = libcoopgamma_native.libcoopgamma_native_get_gamma_info_send(
                                   crtc, self.address, async.address)
-        if successful:
+        if not successful:
             del async
             raise ErrorReport.create_error(value)
         return async
@@ -889,7 +896,7 @@ class Context:
         if isinstance(value, int):
             raise ErrorReport.create_error(value)
         (successful, value) = value
-        if successful:
+        if not successful:
             raise ErrorReport.create_error(value)
         return CRTCInfo(*value)
     
@@ -905,11 +912,11 @@ class Context:
         @param   crtc:str   The name of the CRT
         @return  :CRTCInfo  Information about the CRTC
         '''
-        value = libcoopgamma_native.libcoopgamma_native_get_gamma_info_sync(crtc, self.address, async.address)
+        value = libcoopgamma_native.libcoopgamma_native_get_gamma_info_sync(crtc, self.address)
         if isinstance(value, int):
             raise ErrorReport.create_error(value)
         (successful, value) = value
-        if successful:
+        if not successful:
             raise ErrorReport.create_error(value)
         return CRTCInfo(*value)
     
@@ -924,7 +931,7 @@ class Context:
         async = AsyncContext()
         (successful, value) = libcoopgamma_native.libcoopgamma_native_get_gamma_send(
                                   query, self.address, async.address)
-        if successful:
+        if not successful:
             del async
             raise ErrorReport.create_error(value)
         return async
@@ -940,7 +947,7 @@ class Context:
         if isinstance(value, int):
             raise ErrorReport.create_error(value)
         (successful, value) = value
-        if successful:
+        if not successful:
             raise ErrorReport.create_error(value)
         return FilterTable(*value)
     
@@ -956,11 +963,11 @@ class Context:
         @param   query:FilterQuery  The query to send
         @return  :FilterTable       Filter table
         '''
-        value = libcoopgamma_native.libcoopgamma_native_get_gamma_sync(query, self.address, async.address)
+        value = libcoopgamma_native.libcoopgamma_native_get_gamma_sync(query, self.address)
         if isinstance(value, int):
             raise ErrorReport.create_error(value)
         (successful, value) = value
-        if successful:
+        if not successful:
             raise ErrorReport.create_error(value)
         return FilterTable(*value)
     
@@ -1119,7 +1126,7 @@ def get_socket_file(method = None, site = None):
     '''
     if method is not None:
         method = str(method)
-    ret = libcoopgamma_native.libcoopgamma_native_get_pid_file(method, site)
+    ret = libcoopgamma_native.libcoopgamma_native_get_socket_file(method, site)
     if ret is not None and isinstance(ret, int):
         raise ErrorReport.create_error(ret)
     return ret

@@ -1006,9 +1006,10 @@ def libcoopgamma_native_context_unmarshal(buf : bytes):
                             Element 1: If [0] = 0:  The address of the unmarshalled instance
                                        If [0] = -1: The value of `errno`
     '''
-    cdef size_t ret1 = 0
+    cdef size_t _n = 0
     cdef libcoopgamma_context_t* this
     cdef char* bs = NULL
+    success = False
     this = <libcoopgamma_context_t*>calloc(1, sizeof(libcoopgamma_context_t))
     if this is NULL:
         return (-1, int(errno))
@@ -1016,15 +1017,18 @@ def libcoopgamma_native_context_unmarshal(buf : bytes):
         if libcoopgamma_context_initialise(this) < 0:
             return (-1, int(errno))
         bs = <char*>malloc(len(buf) * sizeof(char))
-        if bs is not NULL:
+        if bs is NULL:
             return (-1, int(errno))
         for i in range(len(buf)):
-            bs[i] = <char>(buf[i])
-        ret0 = <int>libcoopgamma_context_unmarshal(this, bs, &ret1)
-        return (ret0, <int>ret1)
+            bs[i] = <char><unsigned char>(buf[i])
+        ret = int(libcoopgamma_context_unmarshal(this, bs, &_n))
+        ret = (ret, int(<intptr_t><void*>this))
+        success = True
+        return ret
     finally:
-        libcoopgamma_context_destroy(this, <int>1)
-        free(this)
+        if not success:
+            libcoopgamma_context_destroy(this, <int>1)
+            free(this)
         free(bs)
 
 
@@ -1103,9 +1107,10 @@ def libcoopgamma_native_async_context_unmarshal(buf : bytes):
                             Element 1: If [0] = 0:  The address of the unmarshalled instance
                                        If [0] = -1: The value of `errno`
     '''
-    cdef size_t ret1 = 0
+    cdef size_t _n = 0
     cdef libcoopgamma_async_context_t* this
     cdef char* bs = NULL
+    successful = False
     this = <libcoopgamma_async_context_t*>malloc(sizeof(libcoopgamma_async_context_t))
     try:
         if this is NULL:
@@ -1113,15 +1118,18 @@ def libcoopgamma_native_async_context_unmarshal(buf : bytes):
         if libcoopgamma_async_context_initialise(this) < 0:
             return (-1, int(errno))
         bs = <char*>malloc(len(buf) * sizeof(char))
-        if bs is not NULL:
+        if bs is NULL:
             return (-1, int(errno))
         for i in range(len(buf)):
-            bs[i] = <char>(buf[i])
-        ret0 = <int>libcoopgamma_async_context_unmarshal(this, bs, &ret1)
-        return (ret0, <int>ret1)
+            bs[i] = <char><unsigned char>(buf[i])
+        ret = int(libcoopgamma_async_context_unmarshal(this, bs, &_n))
+        ret = (ret, int(<intptr_t><void*>this))
+        success = True
+        return ret
     finally:
-        libcoopgamma_async_context_destroy(this)
-        free(this)
+        if not success:
+            libcoopgamma_async_context_destroy(this)
+            free(this)
         free(bs)
 
 
