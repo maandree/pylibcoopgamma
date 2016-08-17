@@ -720,7 +720,7 @@ class Context:
         params = (self.fd, data)
         return 'libcoopgamma.Context(%s)' % ', '.join(repr(p) for p in params)
     
-    def connect(self, method, site):
+    def connect(self, method = None, site = None):
         '''
         Connect to a coopgamma server, and start it if necessary
         
@@ -736,12 +736,13 @@ class Context:
         '''
         if method is not None and isinstance(method, int):
             method = str(method)
-        error = llibcoopgamma_native.ibcoopgamma_native_connect(method, site, self.address)
-        if error is not None:
-            if error == 0:
+        (successful, value) = libcoopgamma_native.libcoopgamma_native_connect(method, site, self.address)
+        if not successful:
+            if value == 0:
                 raise ServerInitialisationError()
             else:
-                raise ErrorReport.create_error(error)
+                raise ErrorReport.create_error(value)
+        self.fd = value
     
     def detach(self):
         '''

@@ -989,7 +989,7 @@ def libcoopgamma_native_context_marshal(address : int):
         return int(errno)
     try:
         libcoopgamma_context_marshal(this, buf)
-        return bytes(<int>(buf[i]) for i in range(int(n)))
+        return bytes(int(<int><unsigned char>(buf[i])) for i in range(int(n)))
     finally:
         free(buf)
 
@@ -1085,7 +1085,7 @@ def libcoopgamma_native_async_context_marshal(address : int):
         if buf is NULL:
             return int(errno)
         libcoopgamma_async_context_marshal(this, buf)
-        ret = bytes(<int>(buf[i]) for i in range(int(n)))
+        ret = bytes(int(<int><unsigned char>(buf[i])) for i in range(int(n)))
     finally:
         free(buf)
     return ret
@@ -1133,16 +1133,33 @@ def libcoopgamma_native_connect(method : str, site : str, address : int):
     
     SIGCHLD must not be ignored or blocked
     
-    @param   method:str?  The adjustment method, `NULL` for automatic
-    @param   site:str?    The site, `NULL` for automatic
-    @param   address:int  The address of the state of the library, must be initialised
-    @return  :int?        `None`, 0 if the server on could not be initialised,
-                          the value `errno` on other errors
+    @param   method:str?     The adjustment method, `NULL` for automatic
+    @param   site:str?       The site, `NULL` for automatic
+    @param   address:int     The address of the state of the library, must be initialised
+    @return  :(:bool, :int)  If [0] = `True`: [1] is the socket's file descriptor.
+                             If [0] = `False`: [1] is 0 if the server on could not be
+                                 initialised, or the value `errno` on other errors
     '''
+    cdef char* cmethod = NULL
+    cdef char* csite = NULL
     cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
-    if libcoopgamma_connect(method, site, ctx) < 0:
-        return int(errno)
-    return None
+    try:
+        if method is not None:
+            buf = method.encode('utf-8') + bytes([0])
+            cmethod = <char*>malloc(len(buf) * sizeof(char))
+            for i in range(len(buf)):
+                cmethod[i] = <char>(buf[i])
+        if site is not None:
+            buf = site.encode('utf-8') + bytes([0])
+            csite = <char*>malloc(len(buf) * sizeof(char))
+            for i in range(len(buf)):
+                csite[i] = <char>(buf[i])
+        if libcoopgamma_connect(cmethod, csite, ctx) < 0:
+            return (False, int(errno))
+        return (True, int(ctx.fd))
+    finally:
+        free(cmethod)
+        free(csite)
 
 
 def libcoopgamma_native_set_nonblocking(address : int, nonblocking : bool):
