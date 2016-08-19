@@ -906,19 +906,17 @@ class Context:
         '''
         libcoopgamma_native.libcoopgamma_native_skip_message(self.address)
     
-    def get_crtcs_send(self):
+    def get_crtcs_send(self, async):
         '''
         List all available CRTC:s, send request part
         
-        @return  :AsyncContext  Information about the request, that is needed to
-                                identify and parse the response
+        @param  async:AsyncContext  Slot for information about the request that is
+                                    needed to identify and parse the response
         '''
-        async = AsyncContext()
+        
         error = libcoopgamma_native.libcoopgamma_native_get_crtcs_send(self.address, async.address)
         if error != 0:
-            del async
             raise ErrorReport.create_error(error)
-        return async
     
     def get_crtcs_recv(self, async):
         '''
@@ -951,21 +949,18 @@ class Context:
             raise ErrorReport.create_error(ret)
         return ret
     
-    def get_gamma_info_send(self, crtc):
+    def get_gamma_info_send(self, crtc, async):
         '''
         Retrieve information about a CRTC:s gamma ramps, send request part
         
-        @param   crtc:str       The name of the CRT
-        @return  :AsyncContext  Information about the request, that is needed to
-                                identify and parse the response
+        @param  crtc:str            The name of the CRT
+        @param  async:AsyncContext  Slot for information about the request that is
+                                    needed to identify and parse the response
         '''
-        async = AsyncContext()
         (successful, value) = libcoopgamma_native.libcoopgamma_native_get_gamma_info_send(
                                   crtc, self.address, async.address)
         if not successful:
-            del async
             raise ErrorReport.create_error(value)
-        return async
     
     def get_gamma_info_recv(self, async):
         '''
@@ -1002,21 +997,18 @@ class Context:
             raise ErrorReport.create_error(value)
         return CRTCInfo(*value)
     
-    def get_gamma_send(self, query):
+    def get_gamma_send(self, query, async):
         '''
         Retrieve the current gamma ramp adjustments, send request part
         
-        @param   query:FilterQuery  The query to send
-        @return  :AsyncContext      Information about the request, that is
+        @param  query:FilterQuery   The query to send
+        @param  async:AsyncContext  Slot for information about the request that is
                                     needed to identify and parse the response
         '''
-        async = AsyncContext()
         (successful, value) = libcoopgamma_native.libcoopgamma_native_get_gamma_send(
                                   query, self.address, async.address)
         if not successful:
-            del async
             raise ErrorReport.create_error(value)
-        return async
     
     def get_gamma_recv(self, async):
         '''
@@ -1053,21 +1045,18 @@ class Context:
             raise ErrorReport.create_error(value)
         return FilterTable(*value)
     
-    def set_gamma_send(self, filtr):
+    def set_gamma_send(self, filtr, async):
         '''
         Apply, update, or remove a gamma ramp adjustment, send request part
         
-        @param   filtr:Filter   The filter to apply, update, or remove, gamma ramp
-                                meta-data must match the CRTC's
-        @return  :AsyncContext  Information about the request, that is needed to
-                                identify and parse the response
+        @param  filtr:Filter        The filter to apply, update, or remove, gamma ramp
+                                    meta-data must match the CRTC's
+        @param  async:AsyncContext  Slot for information about the request that is
+                                    needed to identify and parse the response
         '''
-        async = AsyncContext()
         error = libcoopgamma_native.libcoopgamma_native_set_gamma_send(filtr, self.address, async.address)
         if error != 0:
-            del async
             raise ErrorReport.create_error(error)
-        return async
     
     def set_gamma_recv(self, async):
         '''
