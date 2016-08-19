@@ -59,6 +59,7 @@ if len(sys.argv) == 1:
 else:
     g = eval(sys.argv[1])
     g.attach()
+    pass
 
 print('\033[1m%s:\033[m' % 'CRTC:s')
 crtcs = g.get_crtcs_sync()
@@ -106,6 +107,7 @@ for i, fltr in enumerate(table.filters):
     for y in zip(rr, gr, br):
         print(fmt % y)
 print()
+table_nc = table
 
 table = g.get_gamma_sync(cg.FilterQuery(crtc = crtc, coalesce = True))
 print('\033[1m%s:\033[m' % 'Filter table')
@@ -124,6 +126,7 @@ for fltr in table.filters:
     for y in zip(rr, gr, br):
         print(fmt % y)
 print()
+table_c = table
 
 fltr = cg.Filter(0, crtc, 'pylibcoopgamma::test::test', cg.Lifespan.UNTIL_DEATH, table.depth,
                  cg.Ramps(table.red_size, table.green_size, table.blue_size))
@@ -218,6 +221,69 @@ if info.gamut is not None:
         sys.exit(4)
     if info2.gamut.white.y_raw != info.gamut.white.y_raw or info2.gamut.white.y != info.gamut.white.y:
         sys.exit(4)
+
+try:
+    g.set_gamma_send(cg.Filter(crtc = crtc, fclass = 'pylibcoopgamma::test::test',
+                               lifespan = cg.Lifespan.REMOVE), async)
+except OSError as e:
+    flush(e)
+if g.synchronise([async]) != 0:
+     sys.exit(1)
+g.set_gamma_recv(async)
+
+try:
+    g.get_gamma_send(cg.FilterQuery(crtc = crtc, coalesce = False), async)
+except OSError as e:
+    flush(e)
+if g.synchronise([async]) != 0:
+     sys.exit(5)
+table = g.get_gamma_recv(async)
+if table.red_size != table_nc.red_size:
+    sys.exit(6)
+if table.green_size != table_nc.green_size:
+    sys.exit(6)
+if table.blue_size != table_nc.blue_size:
+    sys.exit(6)
+if table.depth != table_nc.depth:
+    sys.exit(6)
+if len(table.filters) != len(table_nc.filters):
+    sys.exit(6)
+for i, (fltr1, fltr2) in enumerate(zip(table.filters, table_nc.filters)):
+    if fltr1.priority != fltr2.priority:
+        sys.exit(6)
+    if fltr1.fclass != fltr2.fclass:
+        sys.exit(6)
+    if fltr1.ramps.red != fltr2.ramps.red:
+        sys.exit(6)
+    if fltr1.ramps.green != fltr2.ramps.green:
+        sys.exit(6)
+    if fltr1.ramps.blue != fltr2.ramps.blue:
+        sys.exit(6)
+
+try:
+    g.get_gamma_send(cg.FilterQuery(crtc = crtc, coalesce = True), async)
+except OSError as e:
+    flush(e)
+if g.synchronise([async]) != 0:
+     sys.exit(7)
+table = g.get_gamma_recv(async)
+if table.red_size != table_c.red_size:
+    sys.exit(8)
+if table.green_size != table_c.green_size:
+    sys.exit(8)
+if table.blue_size != table_c.blue_size:
+    sys.exit(8)
+if table.depth != table_c.depth:
+    sys.exit(8)
+if len(table.filters) != len(table_c.filters):
+    sys.exit(8)
+for i, (fltr1, fltr2) in enumerate(zip(table.filters, table_c.filters)):
+    if fltr1.ramps.red != fltr2.ramps.red:
+        sys.exit(8)
+    if fltr1.ramps.green != fltr2.ramps.green:
+        sys.exit(8)
+    if fltr1.ramps.blue != fltr2.ramps.blue:
+        sys.exit(8)
 
 del g
 

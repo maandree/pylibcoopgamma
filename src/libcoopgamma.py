@@ -1004,10 +1004,10 @@ class Context:
         @param  async:AsyncContext  Slot for information about the request that is
                                     needed to identify and parse the response
         '''
-        (successful, value) = libcoopgamma_native.libcoopgamma_native_get_gamma_send(
+        error = libcoopgamma_native.libcoopgamma_native_get_gamma_send(
                                   query, self.address, async.address)
-        if not successful:
-            raise ErrorReport.create_error(value)
+        if error != 0:
+            raise ErrorReport.create_error(error)
     
     def get_gamma_recv(self, async):
         '''

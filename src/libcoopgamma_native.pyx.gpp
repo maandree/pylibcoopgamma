@@ -1784,17 +1784,20 @@ def libcoopgamma_native_set_gamma_send(filtr, address : int, async : int):
     cdef libcoopgamma_filter_t flr
     crtc_bs = filtr.crtc.encode('utf-8') + bytes([0])
     clss_bs = filtr.fclass.encode('utf-8') + bytes([0])
-    flr.priority = <int64_t>(filtr.priority)
+    flr.priority = <int64_t>(0 if filtr.priority is None else filtr.priority)
     flr.lifespan = <libcoopgamma_lifespan_t>(filtr.lifespan)
-    flr.depth = <libcoopgamma_depth_t>(filtr.depth)
+    flr.depth = <libcoopgamma_depth_t>(0 if filtr.depth is None else filtr.depth)
     flr.fclass = NULL
     flr.crtc = NULL
-    flr.ramps.u_red_size   = len(filtr.ramps.red)
-    flr.ramps.u_green_size = len(filtr.ramps.green)
-    flr.ramps.u_blue_size  = len(filtr.ramps.blue)
-    flr.ramps.u_red = NULL
+    flr.ramps.u_red_size   = len(filtr.ramps.red)   if filtr.ramps is not None else 0
+    flr.ramps.u_green_size = len(filtr.ramps.green) if filtr.ramps is not None else 0
+    flr.ramps.u_blue_size  = len(filtr.ramps.blue)  if filtr.ramps is not None else 0
+    flr.ramps.u_red   = NULL
+    flr.ramps.u_green = NULL
+    flr.ramps.u_blue  = NULL
     try:
-        libcoopgamma_native_copy_ramps(<intptr_t><void*>&(flr.ramps), filtr.ramps, flr.depth)
+        if filtr.ramps is not None:
+            libcoopgamma_native_copy_ramps(<intptr_t><void*>&(flr.ramps), filtr.ramps, flr.depth)
         flr.crtc = <char*>malloc(len(crtc_bs) * sizeof(char))
         if flr.crtc is NULL:
             return int(errno)
@@ -1857,17 +1860,20 @@ def libcoopgamma_native_set_gamma_sync(filtr, address : int):
     cdef bytes bs
     crtc_bs = filtr.crtc.encode('utf-8') + bytes([0])
     clss_bs = filtr.fclass.encode('utf-8') + bytes([0])
-    flr.priority = <int64_t>(filtr.priority)
+    flr.priority = <int64_t>(0 if filtr.priority is None else filtr.priority)
     flr.lifespan = <libcoopgamma_lifespan_t>(filtr.lifespan)
-    flr.depth = <libcoopgamma_depth_t>(filtr.depth)
+    flr.depth = <libcoopgamma_depth_t>(0 if filtr.depth is None else filtr.depth)
     flr.fclass = NULL
     flr.crtc = NULL
-    flr.ramps.u_red_size   = len(filtr.ramps.red)
-    flr.ramps.u_green_size = len(filtr.ramps.green)
-    flr.ramps.u_blue_size  = len(filtr.ramps.blue)
-    flr.ramps.u_red = NULL
+    flr.ramps.u_red_size   = len(filtr.ramps.red)   if filtr.ramps is not None else 0
+    flr.ramps.u_green_size = len(filtr.ramps.green) if filtr.ramps is not None else 0
+    flr.ramps.u_blue_size  = len(filtr.ramps.blue)  if filtr.ramps is not None else 0
+    flr.ramps.u_red   = NULL
+    flr.ramps.u_green = NULL
+    flr.ramps.u_blue  = NULL
     try:
-        libcoopgamma_native_copy_ramps(<intptr_t><void*>&(flr.ramps), filtr.ramps, flr.depth)
+        if filtr.ramps is not None:
+            libcoopgamma_native_copy_ramps(<intptr_t><void*>&(flr.ramps), filtr.ramps, flr.depth)
         flr.crtc = <char*>malloc(len(crtc_bs) * sizeof(char))
         if flr.crtc is NULL:
             return int(errno)
