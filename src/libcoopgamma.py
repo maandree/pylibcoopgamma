@@ -891,7 +891,7 @@ class Context:
                                              corresponding AsyncContext is not listed.
         '''
         pending = [p.address for p in pending]
-        (successful, value) = libcoopgamma_native.libcoopgamma_native_flush(self.address, pending)
+        (successful, value) = libcoopgamma_native.libcoopgamma_native_synchronise(self.address, pending)
         if not successful:
             if value == 0:
                 return None
@@ -957,10 +957,9 @@ class Context:
         @param  async:AsyncContext  Slot for information about the request that is
                                     needed to identify and parse the response
         '''
-        (successful, value) = libcoopgamma_native.libcoopgamma_native_get_gamma_info_send(
-                                  crtc, self.address, async.address)
-        if not successful:
-            raise ErrorReport.create_error(value)
+        error = libcoopgamma_native.libcoopgamma_native_get_gamma_info_send(crtc, self.address, async.address)
+        if error != 0:
+            raise ErrorReport.create_error(error)
     
     def get_gamma_info_recv(self, async):
         '''
@@ -969,7 +968,7 @@ class Context:
         @param   async:AsyncContext  Information about the request
         @return  :CRTCInfo           Information about the CRTC
         '''
-        value = libcoopgamma_native.libcoopgamma_native_get_gamma_info_send(self.address, async.address)
+        value = libcoopgamma_native.libcoopgamma_native_get_gamma_info_recv(self.address, async.address)
         if isinstance(value, int):
             raise ErrorReport.create_error(value)
         (successful, value) = value
@@ -1017,7 +1016,7 @@ class Context:
         @param   async:AsyncContext  Information about the request
         @return  :FilterTable        Filter table
         '''
-        value = libcoopgamma_native.libcoopgamma_native_get_gamma_send(self.address, async.address)
+        value = libcoopgamma_native.libcoopgamma_native_get_gamma_recv(self.address, async.address)
         if isinstance(value, int):
             raise ErrorReport.create_error(value)
         (successful, value) = value
@@ -1095,6 +1094,7 @@ class AsyncContext:
         
         @param  buf:bytes?  Buffer to unmarshal
         '''
+        self.address = None
         if buf is None:
             (successful, value) = libcoopgamma_native.libcoopgamma_native_async_context_create()
             if not successful:
@@ -1113,7 +1113,8 @@ class AsyncContext:
         '''
         Destructor
         '''
-        libcoopgamma_native.libcoopgamma_native_async_context_free(self.address)
+        if self.address is not None:
+            libcoopgamma_native.libcoopgamma_native_async_context_free(self.address)
     
     def __repr__(self):
         '''

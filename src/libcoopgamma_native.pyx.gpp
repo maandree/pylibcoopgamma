@@ -1043,7 +1043,7 @@ def libcoopgamma_native_context_set_fd(address : int, fd : int):
     this.fd = fd
 
 
-def libcoopgamma_native_context_create():
+def libcoopgamma_native_async_context_create():
     '''
     Create an instance of `libcoopgamma_context_t`
     

@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this library.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-import os, sys, time
+import os, sys, time, errno
 
 os.chdir('/'.join(sys.argv[0].split('/')[:-1]))
 sys.path.append('../bin')
@@ -61,7 +61,8 @@ else:
     g.attach()
 
 print('\033[1m%s:\033[m' % 'CRTC:s')
-for crtc in g.get_crtcs_sync():
+crtcs = g.get_crtcs_sync()
+for crtc in crtcs:
     print(crtc)
 print()
 
@@ -149,6 +150,74 @@ fltr.ramps.green = greenzero
 fltr.ramps.blue = [Y(x / (table.blue_size - 1)) for x in range(table.blue_size)]
 g.set_gamma_sync(fltr)
 time.sleep(0.5)
+
+g.set_nonbreaking(False)
+
+async = cg.AsyncContext()
+
+def flush(e):
+    if e.errno in (errno.EINTR, errno.EWOULDBLOCK, errno.EAGAIN):
+        while True:
+            try:
+                g.flush()
+            except OSError as ex:
+                if ex.errno in (errno.EINTR, errno.EWOULDBLOCK, errno.EAGAIN):
+                    continue
+                else:
+                    raise ex
+            break
+    else:
+        raise e
+
+try:
+    g.get_crtcs_send(async)
+except OSError as e:
+    flush(e)
+if g.synchronise([async]) != 0:
+     sys.exit(1)
+if g.get_crtcs_recv(async) != crtcs:
+    sys.exit(2)
+
+try:
+    g.get_gamma_info_send(crtc, async)
+except OSError as e:
+    flush(e)
+if g.synchronise([async]) != 0:
+     sys.exit(3)
+info2 = g.get_gamma_info_recv(async)
+if info2.cooperative != info.cooperative:
+    sys.exit(4)
+if info2.depth != info.depth:
+    sys.exit(4)
+if info2.supported != info.supported:
+    sys.exit(4)
+if info2.red_size != info.red_size:
+    sys.exit(4)
+if info2.green_size != info.green_size:
+    sys.exit(4)
+if info2.blue_size != info.blue_size:
+    sys.exit(4)
+if info2.colourspace != info.colourspace:
+    sys.exit(4)
+if (info2.gamut is None) != (info.gamut is None):
+    sys.exit(4)
+if info.gamut is not None:
+    if info2.gamut.red.x_raw != info.gamut.red.x_raw or info2.gamut.red.x != info.gamut.red.x:
+        sys.exit(4)
+    if info2.gamut.red.y_raw != info.gamut.red.y_raw or info2.gamut.red.y != info.gamut.red.y:
+        sys.exit(4)
+    if info2.gamut.green.x_raw != info.gamut.green.x_raw or info2.gamut.green.x != info.gamut.green.x:
+        sys.exit(4)
+    if info2.gamut.green.y_raw != info.gamut.green.y_raw or info2.gamut.green.y != info.gamut.green.y:
+        sys.exit(4)
+    if info2.gamut.blue.x_raw != info.gamut.blue.x_raw or info2.gamut.blue.x != info.gamut.blue.x:
+        sys.exit(4)
+    if info2.gamut.blue.y_raw != info.gamut.blue.y_raw or info2.gamut.blue.y != info.gamut.blue.y:
+        sys.exit(4)
+    if info2.gamut.white.x_raw != info.gamut.white.x_raw or info2.gamut.white.x != info.gamut.white.x:
+        sys.exit(4)
+    if info2.gamut.white.y_raw != info.gamut.white.y_raw or info2.gamut.white.y != info.gamut.white.y:
+        sys.exit(4)
 
 del g
 
