@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this library.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-import os, sys, time, errno
+import os, sys, time, errno, select
 
 os.chdir('/'.join(sys.argv[0].split('/')[:-1]))
 sys.path.append('../bin')
@@ -139,18 +139,21 @@ else:
 
 redzero = fltr.ramps.red
 greenzero = fltr.ramps.green
+redid = [Y(x / (table.red_size - 1)) for x in range(table.red_size)]
+greenid = [Y(x / (table.green_size - 1)) for x in range(table.green_size)]
+blueid = [Y(x / (table.blue_size - 1)) for x in range(table.blue_size)]
 
-fltr.ramps.red = [Y(x / (table.red_size - 1)) for x in range(table.red_size)]
+fltr.ramps.red = redid
 g.set_gamma_sync(fltr)
 time.sleep(0.5)
-
 fltr.ramps.red = redzero
-fltr.ramps.green = [Y(x / (table.green_size - 1)) for x in range(table.green_size)]
+
+fltr.ramps.green = greenid
 g.set_gamma_sync(fltr)
 time.sleep(0.5)
-
 fltr.ramps.green = greenzero
-fltr.ramps.blue = [Y(x / (table.blue_size - 1)) for x in range(table.blue_size)]
+
+fltr.ramps.blue = blueid
 g.set_gamma_sync(fltr)
 time.sleep(0.5)
 
@@ -285,5 +288,89 @@ for i, (fltr1, fltr2) in enumerate(zip(table.filters, table_c.filters)):
     if fltr1.ramps.blue != fltr2.ramps.blue:
         sys.exit(8)
 
+
+fltr = cg.Filter(0, crtc, 'pylibcoopgamma::test::test', cg.Lifespan.UNTIL_DEATH, table.depth,
+                 cg.Ramps(table.red_size, table.green_size, table.blue_size))
+
+fltr.ramps.red = list(reversed(redid))
+fltr.ramps.green = list(reversed(greenid))
+fltr.ramps.blue = list(reversed(blueid))
+try:
+    g.set_gamma_send(fltr, async)
+except OSError as e:
+    flush(e)
+if g.synchronise([async]) != 0:
+    sys.exit(9)
+g.skip_message()
+time.sleep(0.5)
+
+fltr.ramps.red = redid
+fltr.ramps.green = greenid
+fltr.ramps.blue = blueid
+g.set_gamma_sync(fltr)
+
+g.set_nonbreaking(True)
+
+async1 = async
+async2 = cg.AsyncContext()
+async3 = cg.AsyncContext()
+time.sleep(0.5)
+
+fltr.ramps.red = list(reversed(redid))
+fltr.fclass = 'pylibcoopgamma::test::red'
+try:
+    g.set_gamma_send(fltr, async1)
+    need_flush = True
+except OSError as e:
+    if e.errno not in (errno.EINTR, errno.EWOULDBLOCK, errno.EAGAIN):
+        sys.exit(10)
+    need_flush = False
+fltr.ramps.red = redid
+
+fltr.ramps.green = list(reversed(greenid))
+fltr.fclass = 'pylibcoopgamma::test::green'
+try:
+    g.set_gamma_send(fltr, async2)
+    need_flush = True
+except OSError as e:
+    if e.errno not in (errno.EINTR, errno.EWOULDBLOCK, errno.EAGAIN):
+        sys.exit(10)
+    need_flush = False
+fltr.ramps.green = greenid
+
+fltr.ramps.blue = list(reversed(blueid))
+fltr.fclass = 'pylibcoopgamma::test::blue'
+try:
+    g.set_gamma_send(fltr, async3)
+    need_flush = True
+except OSError as e:
+    if e.errno not in (errno.EINTR, errno.EWOULDBLOCK, errno.EAGAIN):
+        sys.exit(10)
+    need_flush = False
+fltr.ramps.blue = blueid
+
+while need_flush:
+    try:
+        g.flush()
+        break
+    except OSError as e:
+        if e.errno in (errno.EINTR, errno.EWOULDBLOCK, errno.EAGAIN):
+            continue
+        else:
+            sys.exit(11)
+
+poll = select.poll()
+poll.register(g.fd, select.POLLIN | select.POLLPRI)
+
+unsynced = [True] * 3
+while any(unsynced):
+    poll.poll()
+    n = g.synchronise([async1, async2, async3])
+    if n < 0 or n >= 3 or not unsynced[n]:
+        sys.exit(12)
+    unsynced[n] = False
+    g.set_gamma_recv([async1, async2, async3][n])
+
+time.sleep(0.5)
 del g
 
