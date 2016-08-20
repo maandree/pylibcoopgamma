@@ -15,6 +15,7 @@ BUILD DEPENDENCIES:
 	cython
 	coreutils
 	pkg-config
+	gpp
 
 
 INSTALL DEPENDENCIES:
