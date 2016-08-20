@@ -1,6 +1,6 @@
 PREFIX = /usr
-LIBDIR = $(PREFIX)$(LIB)
-DATADIR = $(PREFIX)$(DATA)
+LIBDIR = $(PREFIX)/lib
+DATADIR = $(PREFIX)/share
 LICENSEDIR = $(DATADIR)/licenses
 
 PKGNAME = pylibcoopgamma
