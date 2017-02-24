@@ -83,7 +83,7 @@ class Depth(enum.IntEnum):
         if v == Depth.UINT16:
             return '16-bits'
         if v == Depth.UINT32:
-            return '326-bits'
+            return '32-bits'
         if v == Depth.UINT64:
             return '64-bits'
         if v == Depth.FLOAT:
