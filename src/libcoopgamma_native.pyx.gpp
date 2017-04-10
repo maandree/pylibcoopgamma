@@ -1,8 +1,8 @@
 # -*- python -*-
 '''
-1;2802;0cpylibcoopgamma -- Python library for interfacing with cooperative gamma servers
+pylibcoopgamma -- Python library for interfacing with cooperative gamma servers
 Copyright (C) 2016  Mattias Andrée (maandree@kth.se)
-1;2802;0c
+
 This library is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
