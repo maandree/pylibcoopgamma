@@ -250,7 +250,7 @@ $$>
 
 
 
-cdef extern int libcoopgamma_ramps_initialise_(libcoopgamma_ramps_t* this, size_t width)
+cdef extern int libcoopgamma_ramps_initialise_(libcoopgamma_ramps_t* this, size_t width) nogil
 '''
 Initialise a `libcoopgamma_ramps_t`
 
@@ -261,7 +261,7 @@ Initialise a `libcoopgamma_ramps_t`
 @return         Zero on success, -1 on error
 '''
 
-cdef extern void libcoopgamma_ramps_destroy(libcoopgamma_ramps_t* this)
+cdef extern void libcoopgamma_ramps_destroy(libcoopgamma_ramps_t* this) nogil
 '''
 Release all resources allocated to  a `libcoopgamma_ramps_t`,
 the allocation of the record itself is not freed
@@ -272,7 +272,7 @@ or failed call to `libcoopgamma_ramps_unmarshal
 @param  this  The record to destroy
 '''
 
-cdef extern int libcoopgamma_filter_initialise(libcoopgamma_filter_t* this)
+cdef extern int libcoopgamma_filter_initialise(libcoopgamma_filter_t* this) nogil
 '''
 Initialise a `libcoopgamma_filter_t`
 
@@ -280,7 +280,7 @@ Initialise a `libcoopgamma_filter_t`
 @return        Zero on success, -1 on err
 '''
 
-cdef extern void libcoopgamma_filter_destroy(libcoopgamma_filter_t* this)
+cdef extern void libcoopgamma_filter_destroy(libcoopgamma_filter_t* this) nogil
 '''
 Release all resources allocated to  a `libcoopgamma_filter_t`,
 the allocation of the record itself is not freed
@@ -291,7 +291,7 @@ or failed call to `libcoopgamma_filter_unmarshal`
 @param  this  The record to destroy
 '''
 
-cdef extern int libcoopgamma_crtc_info_initialise(libcoopgamma_crtc_info_t* this)
+cdef extern int libcoopgamma_crtc_info_initialise(libcoopgamma_crtc_info_t* this) nogil
 '''
 Initialise a `libcoopgamma_crtc_info_t`
 
@@ -299,7 +299,7 @@ Initialise a `libcoopgamma_crtc_info_t`
 @return        Zero on success, -1 on error
 '''
 
-cdef extern void libcoopgamma_crtc_info_destroy(libcoopgamma_crtc_info_t* this)
+cdef extern void libcoopgamma_crtc_info_destroy(libcoopgamma_crtc_info_t* this) nogil
 '''
 Release all resources allocated to  a `libcoopgamma_crtc_info_t`,
 the allocation of the record itself is not freed
@@ -310,7 +310,7 @@ or failed call to `libcoopgamma_crtc_info_unmarshal
 @param  this  The record to destroy
 '''
 
-cdef extern int libcoopgamma_filter_query_initialise(libcoopgamma_filter_query_t* this)
+cdef extern int libcoopgamma_filter_query_initialise(libcoopgamma_filter_query_t* this) nogil
 '''
 Initialise a `libcoopgamma_filter_query_t`
 
@@ -318,7 +318,7 @@ Initialise a `libcoopgamma_filter_query_t`
 @return        Zero on success, -1 on error
 '''
 
-cdef extern void libcoopgamma_filter_query_destroy(libcoopgamma_filter_query_t* this)
+cdef extern void libcoopgamma_filter_query_destroy(libcoopgamma_filter_query_t* this) nogil
 '''
 Release all resources allocated to  a `libcoopgamma_filter_query_t`,
 the allocation of the record itself is not freed
@@ -329,7 +329,7 @@ or failed call to `libcoopgamma_filter_query_unmarshal`
 @param  this  The record to destroy
 '''
 
-cdef extern int libcoopgamma_queried_filter_initialise(libcoopgamma_queried_filter_t* this)
+cdef extern int libcoopgamma_queried_filter_initialise(libcoopgamma_queried_filter_t* this) nogil
 '''
 Initialise a `libcoopgamma_queried_filter_t`
 
@@ -337,7 +337,7 @@ Initialise a `libcoopgamma_queried_filter_t`
 @return        Zero on success, -1 on error
 '''
 
-cdef extern void libcoopgamma_queried_filter_destroy(libcoopgamma_queried_filter_t* this)
+cdef extern void libcoopgamma_queried_filter_destroy(libcoopgamma_queried_filter_t* this) nogil
 '''
 Release all resources allocated to  a `libcoopgamma_queried_filter_t`,
 the allocation of the record itself is not freed
@@ -348,7 +348,7 @@ or failed call to `libcoopgamma_queried_filter_unmarshal
 @param  this  The record to destro
 '''
 
-cdef extern int libcoopgamma_filter_table_initialise(libcoopgamma_filter_table_t* this)
+cdef extern int libcoopgamma_filter_table_initialise(libcoopgamma_filter_table_t* this) nogil
 '''
 Initialise a `libcoopgamma_filter_table_t
 
@@ -356,7 +356,7 @@ Initialise a `libcoopgamma_filter_table_t
 @return        Zero on success, -1 on error
 '''
 
-cdef extern void libcoopgamma_filter_table_destroy(libcoopgamma_filter_table_t* this)
+cdef extern void libcoopgamma_filter_table_destroy(libcoopgamma_filter_table_t* this) nogil
 '''
 Release all resources allocated to  a `libcoopgamma_filter_table_t`,
 the allocation of the record itself is not freed
@@ -367,7 +367,7 @@ or failed call to `libcoopgamma_filter_table_unmarshal`
 @param  this  The record to destroy
 '''
 
-cdef extern void libcoopgamma_filter_table_destroy(libcoopgamma_filter_table_t* this)
+cdef extern void libcoopgamma_filter_table_destroy(libcoopgamma_filter_table_t* this) nogil
 '''
 Release all resources allocated to  a `libcoopgamma_filter_table_t`,
 the allocation of the record itself is not freed
@@ -378,7 +378,7 @@ or failed call to `libcoopgamma_filter_table_unmarshal`
 @param  this  The record to destroy
 '''
 
-cdef extern int libcoopgamma_error_initialise(libcoopgamma_error_t* this)
+cdef extern int libcoopgamma_error_initialise(libcoopgamma_error_t* this) nogil
 '''
 Initialise a `libcoopgamma_error_t`
 
@@ -386,7 +386,7 @@ Initialise a `libcoopgamma_error_t`
 @return        Zero on success, -1 on error
 '''
 
-cdef extern void libcoopgamma_error_destroy(libcoopgamma_error_t* this)
+cdef extern void libcoopgamma_error_destroy(libcoopgamma_error_t* this) nogil
 '''
 Release all resources allocated to  a `libcoopgamma_error_t`,
 the allocation of the record itself is not freed
@@ -397,7 +397,7 @@ or failed call to `libcoopgamma_error_unmarshal`
 @param  this  The record to destroy
 '''
 
-cdef extern int libcoopgamma_context_initialise(libcoopgamma_context_t* this)
+cdef extern int libcoopgamma_context_initialise(libcoopgamma_context_t* this) nogil
 '''
 Initialise a `libcoopgamma_context_t`
 
@@ -405,7 +405,7 @@ Initialise a `libcoopgamma_context_t`
 @return        Zero on success, -1 on error
 '''
 
-cdef extern void libcoopgamma_context_destroy(libcoopgamma_context_t* this, int disconnect)
+cdef extern void libcoopgamma_context_destroy(libcoopgamma_context_t* this, int disconnect) nogil
 '''
 Release all resources allocated to  a `libcoopgamma_context_t`,
 the allocation of the record itself is not freed
@@ -417,7 +417,7 @@ or failed call to `libcoopgamma_context_unmarshal`
 @param  disconnect  Disconnect from the server?
 '''
 
-cdef extern size_t libcoopgamma_context_marshal(const libcoopgamma_context_t* this, void* buf)
+cdef extern size_t libcoopgamma_context_marshal(const libcoopgamma_context_t* this, void* buf) nogil
 '''
 Marshal a `libcoopgamma_context_t` into a buffer
 
@@ -428,7 +428,7 @@ Marshal a `libcoopgamma_context_t` into a buffer
                how many bytes would be marshalled if `buf != NULL`
 '''
 
-cdef extern int libcoopgamma_context_unmarshal(libcoopgamma_context_t* this, const void* buf, size_t* n)
+cdef extern int libcoopgamma_context_unmarshal(libcoopgamma_context_t* this, const void* buf, size_t* n) nogil
 '''
 Unmarshal a `libcoopgamma_context_t` from a buffer
 
@@ -439,7 +439,7 @@ Unmarshal a `libcoopgamma_context_t` from a buffer
                `LIBCOOPGAMMA_INCOMPATIBLE_UPGRADE`, or `LIBCOOPGAMMA_ERRNO_SET`
 '''
 
-cdef extern int libcoopgamma_async_context_initialise(libcoopgamma_async_context_t* this)
+cdef extern int libcoopgamma_async_context_initialise(libcoopgamma_async_context_t* this) nogil
 '''
 Initialise a `libcoopgamma_async_context_t`
 
@@ -447,7 +447,7 @@ Initialise a `libcoopgamma_async_context_t`
 @return        Zero on success, -1 on error
 '''
 
-cdef extern void libcoopgamma_async_context_destroy(libcoopgamma_async_context_t* this)
+cdef extern void libcoopgamma_async_context_destroy(libcoopgamma_async_context_t* this) nogil
 '''
 Release all resources allocated to  a `libcoopgamma_async_context_t`,
 the allocation of the record itself is not freed
@@ -458,7 +458,7 @@ or failed call to `libcoopgamma_async_context_unmarshal`
 @param  this  The record to destroy
 '''
 
-cdef extern size_t libcoopgamma_async_context_marshal(const libcoopgamma_async_context_t* this, void* buf)
+cdef extern size_t libcoopgamma_async_context_marshal(const libcoopgamma_async_context_t* this, void* buf) nogil
 '''
 Marshal a `libcoopgamma_async_context_t` into a buffer
 
@@ -470,7 +470,7 @@ Marshal a `libcoopgamma_async_context_t` into a buffer
 '''
 
 cdef extern int libcoopgamma_async_context_unmarshal(libcoopgamma_async_context_t* this,
-                                                     const void* buf, size_t* n)
+                                                     const void* buf, size_t* n) nogil
 '''
 Unmarshal a `libcoopgamma_async_context_t` from a buffer
 
@@ -481,7 +481,7 @@ Unmarshal a `libcoopgamma_async_context_t` from a buffer
                `LIBCOOPGAMMA_INCOMPATIBLE_UPGRADE`, or `LIBCOOPGAMMA_ERRNO_SET`
 '''
 
-cdef extern char** libcoopgamma_get_methods()
+cdef extern char** libcoopgamma_get_methods() nogil
 '''
 List all recognised adjustment method
 
@@ -493,7 +493,7 @@ SIGCHLD must not be ignored or blocked
 '''
 
 cdef extern int libcoopgamma_get_method_and_site(const char* method, const char* site,
-                                                 char** methodp, char** sitep)
+                                                 char** methodp, char** sitep) nogil
 '''
 Get the adjustment method and site
 
@@ -512,7 +512,7 @@ SIGCHLD must not be ignored or blocked
 @return           Zero on success, -1 on error
 '''
 
-cdef extern char* libcoopgamma_get_pid_file(const char* method, const char* site)
+cdef extern char* libcoopgamma_get_pid_file(const char* method, const char* site) nogil
 '''
 Get the PID file of the coopgamma server
 
@@ -525,7 +525,7 @@ SIGCHLD must not be ignored or blocked
                   case is detected by checking that `errno` is set to 0.
 '''
 
-cdef extern char* libcoopgamma_get_socket_file(const char* method, const char* site)
+cdef extern char* libcoopgamma_get_socket_file(const char* method, const char* site) nogil
 '''
 Get the socket file of the coopgamma server
 
@@ -540,7 +540,7 @@ SIGCHLD must not be ignored or blocked
                   multi-server display server like mds.
 '''
 
-cdef extern int libcoopgamma_connect(const char* method, const char* site, libcoopgamma_context_t* ctx)
+cdef extern int libcoopgamma_connect(const char* method, const char* site, libcoopgamma_context_t* ctx) nogil
 '''
 Connect to a coopgamma server, and start it if necessary
 
@@ -555,7 +555,7 @@ SIGCHLD must not be ignored or blocked
                  to 0 if the server could not be initialised.
 '''
 
-cdef extern int libcoopgamma_set_nonblocking(libcoopgamma_context_t* ctx, int nonblocking)
+cdef extern int libcoopgamma_set_nonblocking(libcoopgamma_context_t* ctx, int nonblocking) nogil
 '''
 By default communication is blocking, this function
 can be used to switch between blocking and nonblocking
@@ -572,7 +572,7 @@ or `libcoopgamma_synchronise` just like EINTR failure.
 @return               Zero on success, -1 on error
 '''
 
-cdef extern int libcoopgamma_flush(libcoopgamma_context_t* ctx)
+cdef extern int libcoopgamma_flush(libcoopgamma_context_t* ctx) nogil
 '''
 Send all pending outbound data
 
@@ -587,7 +587,7 @@ with EINTR.
 '''
 
 cdef extern int libcoopgamma_synchronise(libcoopgamma_context_t* ctx, libcoopgamma_async_context_t* pending,
-                                         size_t n, size_t* selected)
+                                         size_t n, size_t* selected) nogil
 '''
 Wait for the next message to be received
 
@@ -608,14 +608,14 @@ Wait for the next message to be received
                    beyond recover.
 '''
 
-cdef extern void libcoopgamma_skip_message(libcoopgamma_context_t* ctx)
+cdef extern void libcoopgamma_skip_message(libcoopgamma_context_t* ctx) nogil
 '''
 Tell the library that you will not be parsing a receive message
 
 @param  ctx  The state of the library, must be connected
 '''
 
-cdef extern int libcoopgamma_get_crtcs_send(libcoopgamma_context_t* ctx, libcoopgamma_async_context_t* async)
+cdef extern int libcoopgamma_get_crtcs_send(libcoopgamma_context_t* ctx, libcoopgamma_async_context_t* async) nogil
 '''
 List all available CRTC:s, send request part
 
@@ -627,7 +627,7 @@ Cannot be used before connecting to the server
 @return         Zero on success, -1 on error
 '''
 
-cdef extern char** libcoopgamma_get_crtcs_recv(libcoopgamma_context_t* ctx, libcoopgamma_async_context_t* async)
+cdef extern char** libcoopgamma_get_crtcs_recv(libcoopgamma_context_t* ctx, libcoopgamma_async_context_t* async) nogil
 '''
 List all available CRTC:s, receive response part
 
@@ -640,7 +640,7 @@ List all available CRTC:s, receive response part
                 for information about the error.
 '''
 
-cdef extern char** libcoopgamma_get_crtcs_sync(libcoopgamma_context_t* ctx)
+cdef extern char** libcoopgamma_get_crtcs_sync(libcoopgamma_context_t* ctx) nogil
 '''
 List all available CRTC:s, synchronous version
 
@@ -660,7 +660,7 @@ operation without disconnection from the server
 '''
 
 cdef extern int libcoopgamma_get_gamma_info_send(const char* crtc, libcoopgamma_context_t* ctx,
-                                                 libcoopgamma_async_context_t* async)
+                                                 libcoopgamma_async_context_t* async) nogil
 '''
 Retrieve information about a CRTC:s gamma ramps, send request part
 
@@ -674,7 +674,7 @@ Cannot be used before connecting to the server
 '''
 
 cdef extern int libcoopgamma_get_gamma_info_recv(libcoopgamma_crtc_info_t* info, libcoopgamma_context_t* ctx,
-                                                 libcoopgamma_async_context_t* async)
+                                                 libcoopgamma_async_context_t* async) nogil
 '''
 Retrieve information about a CRTC:s gamma ramps, receive response part
 
@@ -686,7 +686,7 @@ Retrieve information about a CRTC:s gamma ramps, receive response part
 '''
 
 cdef extern int libcoopgamma_get_gamma_info_sync(const char* crtc, libcoopgamma_crtc_info_t* info,
-                                                 libcoopgamma_context_t* ctx)
+                                                 libcoopgamma_context_t* ctx) nogil
 '''
 Retrieve information about a CRTC:s gamma ramps, synchronous version
 
@@ -705,7 +705,7 @@ operation without disconnection from the server
 '''
 
 cdef extern int libcoopgamma_get_gamma_send(const libcoopgamma_filter_query_t* query,
-                                            libcoopgamma_context_t* ctx, libcoopgamma_async_context_t* async)
+                                            libcoopgamma_context_t* ctx, libcoopgamma_async_context_t* async) nogil
 '''
 Retrieve the current gamma ramp adjustments, send request part
 
@@ -719,7 +719,7 @@ Cannot be used before connecting to the server
 '''
 
 cdef extern int libcoopgamma_get_gamma_recv(libcoopgamma_filter_table_t* table, libcoopgamma_context_t* ctx,
-                                            libcoopgamma_async_context_t* async)
+                                            libcoopgamma_async_context_t* async) nogil
 '''
 Retrieve the current gamma ramp adjustments, receive response part
 
@@ -731,7 +731,7 @@ Retrieve the current gamma ramp adjustments, receive response part
 '''
 
 cdef extern int libcoopgamma_get_gamma_sync(const libcoopgamma_filter_query_t* query,
-                                            libcoopgamma_filter_table_t* table, libcoopgamma_context_t* ctx)
+                                            libcoopgamma_filter_table_t* table, libcoopgamma_context_t* ctx) nogil
 '''
 Retrieve the current gamma ramp adjustments, synchronous version
 
@@ -750,7 +750,7 @@ operation without disconnection from the server
 '''
 
 cdef extern int libcoopgamma_set_gamma_send(const libcoopgamma_filter_t* filtr, libcoopgamma_context_t* ctx,
-                                            libcoopgamma_async_context_t* async)
+                                            libcoopgamma_async_context_t* async) nogil
 '''
 Apply, update, or remove a gamma ramp adjustment, send request part
 
@@ -763,7 +763,7 @@ Cannot be used before connecting to the server
 @return         Zero on success, -1 on error
 '''
 
-cdef extern int libcoopgamma_set_gamma_recv(libcoopgamma_context_t* ctx, libcoopgamma_async_context_t* async)
+cdef extern int libcoopgamma_set_gamma_recv(libcoopgamma_context_t* ctx, libcoopgamma_async_context_t* async) nogil
 '''
 Apply, update, or remove a gamma ramp adjustment, receive response part
 
@@ -773,7 +773,7 @@ Apply, update, or remove a gamma ramp adjustment, receive response part
                 (rather than `errno`) is read for information about the error
 '''
 
-cdef extern int libcoopgamma_set_gamma_sync(const libcoopgamma_filter_t* filtr, libcoopgamma_context_t* ctx)
+cdef extern int libcoopgamma_set_gamma_sync(const libcoopgamma_filter_t* filtr, libcoopgamma_context_t* ctx) nogil
 '''
 Apply, update, or remove a gamma ramp adjustment, synchronous version
 
