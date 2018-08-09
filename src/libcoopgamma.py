@@ -869,7 +869,7 @@ class Context:
         Send all pending outbound data
         
         If this function or another function that sends a request to the server fails
-        with EINTR, call this function to complete the transfer. The `async` parameter
+        with EINTR, call this function to complete the transfer. The `async_ctx` parameter
         will always be in a properly configured state if a function fails with EINTR.
         '''
         error = libcoopgamma_native.libcoopgamma_native_flush(self.address)
@@ -906,28 +906,28 @@ class Context:
         '''
         libcoopgamma_native.libcoopgamma_native_skip_message(self.address)
     
-    def get_crtcs_send(self, async):
+    def get_crtcs_send(self, async_ctx):
         '''
         List all available CRTC:s, send request part
         
-        @param  async:AsyncContext  Slot for information about the request that is
-                                    needed to identify and parse the response
+        @param  async_ctx:AsyncContext  Slot for information about the request that is
+                                        needed to identify and parse the response
         '''
         
-        error = libcoopgamma_native.libcoopgamma_native_get_crtcs_send(self.address, async.address)
+        error = libcoopgamma_native.libcoopgamma_native_get_crtcs_send(self.address, async_ctx.address)
         if error != 0:
             raise ErrorReport.create_error(error)
     
-    def get_crtcs_recv(self, async):
+    def get_crtcs_recv(self, async_ctx):
         '''
         List all available CRTC:s, receive response part
         
-        @param   async:AsyncContext  Information about the request
-        @return  :list<str>          A list of names. You should only free the outer
-                                     pointer, inner pointers are subpointers of the
-                                     outer pointer and cannot be freed.
+        @param   async_ctx:AsyncContext  Information about the request
+        @return  :list<str>              A list of names. You should only free the outer
+                                         pointer, inner pointers are subpointers of the
+                                         outer pointer and cannot be freed.
         '''
-        ret = libcoopgamma_native.libcoopgamma_native_get_crtcs_recv(self.address, async.address)
+        ret = libcoopgamma_native.libcoopgamma_native_get_crtcs_recv(self.address, async_ctx.address)
         if isinstance(ret, int):
             raise ErrorReport.create_error(ret)
         return ret
@@ -949,26 +949,26 @@ class Context:
             raise ErrorReport.create_error(ret)
         return ret
     
-    def get_gamma_info_send(self, crtc, async):
+    def get_gamma_info_send(self, crtc, async_ctx):
         '''
         Retrieve information about a CRTC:s gamma ramps, send request part
         
-        @param  crtc:str            The name of the CRT
-        @param  async:AsyncContext  Slot for information about the request that is
-                                    needed to identify and parse the response
+        @param  crtc:str                The name of the CRT
+        @param  async_ctx:AsyncContext  Slot for information about the request that is
+                                        needed to identify and parse the response
         '''
-        error = libcoopgamma_native.libcoopgamma_native_get_gamma_info_send(crtc, self.address, async.address)
+        error = libcoopgamma_native.libcoopgamma_native_get_gamma_info_send(crtc, self.address, async_ctx.address)
         if error != 0:
             raise ErrorReport.create_error(error)
     
-    def get_gamma_info_recv(self, async):
+    def get_gamma_info_recv(self, async_ctx):
         '''
         Retrieve information about a CRTC:s gamma ramps, receive response part
         
-        @param   async:AsyncContext  Information about the request
-        @return  :CRTCInfo           Information about the CRTC
+        @param   async_ctx:AsyncContext  Information about the request
+        @return  :CRTCInfo               Information about the CRTC
         '''
-        value = libcoopgamma_native.libcoopgamma_native_get_gamma_info_recv(self.address, async.address)
+        value = libcoopgamma_native.libcoopgamma_native_get_gamma_info_recv(self.address, async_ctx.address)
         if isinstance(value, int):
             raise ErrorReport.create_error(value)
         (successful, value) = value
@@ -996,27 +996,27 @@ class Context:
             raise ErrorReport.create_error(value)
         return CRTCInfo(*value)
     
-    def get_gamma_send(self, query, async):
+    def get_gamma_send(self, query, async_ctx):
         '''
         Retrieve the current gamma ramp adjustments, send request part
         
-        @param  query:FilterQuery   The query to send
-        @param  async:AsyncContext  Slot for information about the request that is
-                                    needed to identify and parse the response
+        @param  query:FilterQuery       The query to send
+        @param  async_ctx:AsyncContext  Slot for information about the request that is
+                                        needed to identify and parse the response
         '''
         error = libcoopgamma_native.libcoopgamma_native_get_gamma_send(
-                                  query, self.address, async.address)
+                                    query, self.address, async_ctx.address)
         if error != 0:
             raise ErrorReport.create_error(error)
     
-    def get_gamma_recv(self, async):
+    def get_gamma_recv(self, async_ctx):
         '''
         Retrieve the current gamma ramp adjustments, receive response part
         
-        @param   async:AsyncContext  Information about the request
-        @return  :FilterTable        Filter table
+        @param   async_ctx:AsyncContext  Information about the request
+        @return  :FilterTable            Filter table
         '''
-        value = libcoopgamma_native.libcoopgamma_native_get_gamma_recv(self.address, async.address)
+        value = libcoopgamma_native.libcoopgamma_native_get_gamma_recv(self.address, async_ctx.address)
         if isinstance(value, int):
             raise ErrorReport.create_error(value)
         (successful, value) = value
@@ -1044,26 +1044,26 @@ class Context:
             raise ErrorReport.create_error(value)
         return FilterTable(*value)
     
-    def set_gamma_send(self, filtr, async):
+    def set_gamma_send(self, filtr, async_ctx):
         '''
         Apply, update, or remove a gamma ramp adjustment, send request part
         
-        @param  filtr:Filter        The filter to apply, update, or remove, gamma ramp
-                                    meta-data must match the CRTC's
-        @param  async:AsyncContext  Slot for information about the request that is
-                                    needed to identify and parse the response
+        @param  filtr:Filter            The filter to apply, update, or remove, gamma ramp
+                                        meta-data must match the CRTC's
+        @param  async_ctx:AsyncContext  Slot for information about the request that is
+                                        needed to identify and parse the response
         '''
-        error = libcoopgamma_native.libcoopgamma_native_set_gamma_send(filtr, self.address, async.address)
+        error = libcoopgamma_native.libcoopgamma_native_set_gamma_send(filtr, self.address, async_ctx.address)
         if error != 0:
             raise ErrorReport.create_error(error)
     
-    def set_gamma_recv(self, async):
+    def set_gamma_recv(self, async_ctx):
         '''
         Apply, update, or remove a gamma ramp adjustment, receive response part
         
-        @param  async:AsyncContext  Information about the request
+        @param  async_ctx:AsyncContext  Information about the request
         '''
-        error = libcoopgamma_native.libcoopgamma_native_set_gamma_recv(self.address, async.address)
+        error = libcoopgamma_native.libcoopgamma_native_set_gamma_recv(self.address, async_ctx.address)
         if error is not None:
             raise ErrorReport.create_error(error)
     

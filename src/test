@@ -159,7 +159,7 @@ time.sleep(0.5)
 
 g.set_nonbreaking(False)
 
-async = cg.AsyncContext()
+asynch = cg.AsyncContext()
 
 def flush(e):
     if e.errno in (errno.EINTR, errno.EWOULDBLOCK, errno.EAGAIN):
@@ -176,21 +176,21 @@ def flush(e):
         raise e
 
 try:
-    g.get_crtcs_send(async)
+    g.get_crtcs_send(asynch)
 except OSError as e:
     flush(e)
-if g.synchronise([async]) != 0:
+if g.synchronise([asynch]) != 0:
      sys.exit(1)
-if g.get_crtcs_recv(async) != crtcs:
+if g.get_crtcs_recv(asynch) != crtcs:
     sys.exit(2)
 
 try:
-    g.get_gamma_info_send(crtc, async)
+    g.get_gamma_info_send(crtc, asynch)
 except OSError as e:
     flush(e)
-if g.synchronise([async]) != 0:
+if g.synchronise([asynch]) != 0:
      sys.exit(3)
-info2 = g.get_gamma_info_recv(async)
+info2 = g.get_gamma_info_recv(asynch)
 if info2.cooperative != info.cooperative:
     sys.exit(4)
 if info2.depth != info.depth:
@@ -227,20 +227,20 @@ if info.gamut is not None:
 
 try:
     g.set_gamma_send(cg.Filter(crtc = crtc, fclass = 'pylibcoopgamma::test::test',
-                               lifespan = cg.Lifespan.REMOVE), async)
+                               lifespan = cg.Lifespan.REMOVE), asynch)
 except OSError as e:
     flush(e)
-if g.synchronise([async]) != 0:
+if g.synchronise([asynch]) != 0:
      sys.exit(1)
-g.set_gamma_recv(async)
+g.set_gamma_recv(asynch)
 
 try:
-    g.get_gamma_send(cg.FilterQuery(crtc = crtc, coalesce = False), async)
+    g.get_gamma_send(cg.FilterQuery(crtc = crtc, coalesce = False), asynch)
 except OSError as e:
     flush(e)
-if g.synchronise([async]) != 0:
+if g.synchronise([asynch]) != 0:
      sys.exit(5)
-table = g.get_gamma_recv(async)
+table = g.get_gamma_recv(asynch)
 if table.red_size != table_nc.red_size:
     sys.exit(6)
 if table.green_size != table_nc.green_size:
@@ -264,12 +264,12 @@ for i, (fltr1, fltr2) in enumerate(zip(table.filters, table_nc.filters)):
         sys.exit(6)
 
 try:
-    g.get_gamma_send(cg.FilterQuery(crtc = crtc, coalesce = True), async)
+    g.get_gamma_send(cg.FilterQuery(crtc = crtc, coalesce = True), asynch)
 except OSError as e:
     flush(e)
-if g.synchronise([async]) != 0:
+if g.synchronise([asynch]) != 0:
      sys.exit(7)
-table = g.get_gamma_recv(async)
+table = g.get_gamma_recv(asynch)
 if table.red_size != table_c.red_size:
     sys.exit(8)
 if table.green_size != table_c.green_size:
@@ -296,10 +296,10 @@ fltr.ramps.red = list(reversed(redid))
 fltr.ramps.green = list(reversed(greenid))
 fltr.ramps.blue = list(reversed(blueid))
 try:
-    g.set_gamma_send(fltr, async)
+    g.set_gamma_send(fltr, asynch)
 except OSError as e:
     flush(e)
-if g.synchronise([async]) != 0:
+if g.synchronise([asynch]) != 0:
     sys.exit(9)
 g.skip_message()
 time.sleep(0.5)
@@ -311,7 +311,7 @@ g.set_gamma_sync(fltr)
 
 g.set_nonbreaking(True)
 
-async1 = async
+async1 = asynch
 async2 = cg.AsyncContext()
 async3 = cg.AsyncContext()
 time.sleep(0.5)

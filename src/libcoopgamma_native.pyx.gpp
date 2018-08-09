@@ -578,7 +578,7 @@ Send all pending outbound data
 
 If this function or another function that sends a request
 to the server fails with EINTR, call this function to
-complete the transfer. The `async` parameter will always
+complete the transfer. The `async_ctx` parameter will always
 be in a properly configured state if a function fails
 with EINTR.
 
@@ -615,29 +615,29 @@ Tell the library that you will not be parsing a receive message
 @param  ctx  The state of the library, must be connected
 '''
 
-cdef extern int libcoopgamma_get_crtcs_send(libcoopgamma_context_t* ctx, libcoopgamma_async_context_t* async) nogil
+cdef extern int libcoopgamma_get_crtcs_send(libcoopgamma_context_t* ctx, libcoopgamma_async_context_t* async_ctx) nogil
 '''
 List all available CRTC:s, send request part
 
 Cannot be used before connecting to the server
 
-@param   ctx    The state of the library, must be connected
-@param   async  Information about the request, that is needed to
-                identify and parse the response, is stored here
-@return         Zero on success, -1 on error
+@param   ctx        The state of the library, must be connected
+@param   async_ctx  Information about the request, that is needed to
+                    identify and parse the response, is stored here
+@return             Zero on success, -1 on error
 '''
 
-cdef extern char** libcoopgamma_get_crtcs_recv(libcoopgamma_context_t* ctx, libcoopgamma_async_context_t* async) nogil
+cdef extern char** libcoopgamma_get_crtcs_recv(libcoopgamma_context_t* ctx, libcoopgamma_async_context_t* async_ctx) nogil
 '''
 List all available CRTC:s, receive response part
 
-@param   ctx    The state of the library, must be connected
-@param   async  Information about the request
-@return         A `NULL`-terminated list of names. You should only free
-                the outer pointer, inner pointers are subpointers of the
-                outer pointer and cannot be freed. `NULL` on error, in
-                which case `ctx->error` (rather than `errno`) is read
-                for information about the error.
+@param   ctx        The state of the library, must be connected
+@param   async_ctx  Information about the request
+@return             A `NULL`-terminated list of names. You should only free
+                    the outer pointer, inner pointers are subpointers of the
+                    outer pointer and cannot be freed. `NULL` on error, in
+                    which case `ctx->error` (rather than `errno`) is read
+                    for information about the error.
 '''
 
 cdef extern char** libcoopgamma_get_crtcs_sync(libcoopgamma_context_t* ctx) nogil
@@ -660,29 +660,29 @@ operation without disconnection from the server
 '''
 
 cdef extern int libcoopgamma_get_gamma_info_send(const char* crtc, libcoopgamma_context_t* ctx,
-                                                 libcoopgamma_async_context_t* async) nogil
+                                                 libcoopgamma_async_context_t* async_ctx) nogil
 '''
 Retrieve information about a CRTC:s gamma ramps, send request part
 
 Cannot be used before connecting to the server
 
-@param   crtc   The name of the CRTC
-@param   ctx    The state of the library, must be connected
-@param   async  Information about the request, that is needed to
-                identify and parse the response, is stored here
-@return         Zero on success, -1 on error
+@param   crtc       The name of the CRTC
+@param   ctx        The state of the library, must be connected
+@param   async_ctx  Information about the request, that is needed to
+                    identify and parse the response, is stored here
+@return             Zero on success, -1 on error
 '''
 
 cdef extern int libcoopgamma_get_gamma_info_recv(libcoopgamma_crtc_info_t* info, libcoopgamma_context_t* ctx,
-                                                 libcoopgamma_async_context_t* async) nogil
+                                                 libcoopgamma_async_context_t* async_ctx) nogil
 '''
 Retrieve information about a CRTC:s gamma ramps, receive response part
 
-@param   info   Output parameter for the information, must be initialised
-@param   ctx    The state of the library, must be connected
-@param   async  Information about the request
-@return         Zero on success, -1 on error, in which case `ctx->error`
-                (rather than `errno`) is read for information about the error
+@param   info       Output parameter for the information, must be initialised
+@param   ctx        The state of the library, must be connected
+@param   async_ctx  Information about the request
+@return             Zero on success, -1 on error, in which case `ctx->error`
+                    (rather than `errno`) is read for information about the error
 '''
 
 cdef extern int libcoopgamma_get_gamma_info_sync(const char* crtc, libcoopgamma_crtc_info_t* info,
@@ -705,29 +705,29 @@ operation without disconnection from the server
 '''
 
 cdef extern int libcoopgamma_get_gamma_send(const libcoopgamma_filter_query_t* query,
-                                            libcoopgamma_context_t* ctx, libcoopgamma_async_context_t* async) nogil
+                                            libcoopgamma_context_t* ctx, libcoopgamma_async_context_t* async_ctx) nogil
 '''
 Retrieve the current gamma ramp adjustments, send request part
 
 Cannot be used before connecting to the server
 
-@param   query  The query to send
-@param   ctx    The state of the library, must be connected
-@param   async  Information about the request, that is needed to
-                identify and parse the response, is stored here
-@return         Zero on success, -1 on error
+@param   query      The query to send
+@param   ctx        The state of the library, must be connected
+@param   async_ctx  Information about the request, that is needed to
+                    identify and parse the response, is stored here
+@return             Zero on success, -1 on error
 '''
 
 cdef extern int libcoopgamma_get_gamma_recv(libcoopgamma_filter_table_t* table, libcoopgamma_context_t* ctx,
-                                            libcoopgamma_async_context_t* async) nogil
+                                            libcoopgamma_async_context_t* async_ctx) nogil
 '''
 Retrieve the current gamma ramp adjustments, receive response part
 
-@param   table  Output for the response, must be initialised
-@param   ctx    The state of the library, must be connected
-@param   async  Information about the request
-@return         Zero on success, -1 on error, in which case `ctx->error`
-                (rather than `errno`) is read for information about the error
+@param   table      Output for the response, must be initialised
+@param   ctx        The state of the library, must be connected
+@param   async_ctx  Information about the request
+@return             Zero on success, -1 on error, in which case `ctx->error`
+                    (rather than `errno`) is read for information about the error
 '''
 
 cdef extern int libcoopgamma_get_gamma_sync(const libcoopgamma_filter_query_t* query,
@@ -750,27 +750,27 @@ operation without disconnection from the server
 '''
 
 cdef extern int libcoopgamma_set_gamma_send(const libcoopgamma_filter_t* filtr, libcoopgamma_context_t* ctx,
-                                            libcoopgamma_async_context_t* async) nogil
+                                            libcoopgamma_async_context_t* async_ctx) nogil
 '''
 Apply, update, or remove a gamma ramp adjustment, send request part
 
 Cannot be used before connecting to the server
 
-@param   filtr  The filter to apply, update, or remove, gamma ramp meta-data must match the CRTC's
-@param   ctx    The state of the library, must be connected
-@param   async  Information about the request, that is needed to
-                identify and parse the response, is stored here
-@return         Zero on success, -1 on error
+@param   filtr      The filter to apply, update, or remove, gamma ramp meta-data must match the CRTC's
+@param   ctx        The state of the library, must be connected
+@param   async_ctx  Information about the request, that is needed to
+                    identify and parse the response, is stored here
+@return             Zero on success, -1 on error
 '''
 
-cdef extern int libcoopgamma_set_gamma_recv(libcoopgamma_context_t* ctx, libcoopgamma_async_context_t* async) nogil
+cdef extern int libcoopgamma_set_gamma_recv(libcoopgamma_context_t* ctx, libcoopgamma_async_context_t* async_ctx) nogil
 '''
 Apply, update, or remove a gamma ramp adjustment, receive response part
 
-@param   ctx    The state of the library, must be connected
-@param   async  Information about the request
-@return         Zero on success, -1 on error, in which case `ctx->error`
-                (rather than `errno`) is read for information about the error
+@param   ctx        The state of the library, must be connected
+@param   async_ctx  Information about the request
+@return             Zero on success, -1 on error, in which case `ctx->error`
+                    (rather than `errno`) is read for information about the error
 '''
 
 cdef extern int libcoopgamma_set_gamma_sync(const libcoopgamma_filter_t* filtr, libcoopgamma_context_t* ctx) nogil
@@ -1198,7 +1198,7 @@ def libcoopgamma_native_flush(address : int):
     
     If this function or another function that sends a request
     to the server fails with EINTR, call this function to
-    complete the transfer. The `async` parameter will always
+    complete the transfer. The `async_ctx` parameter will always
     be in a properly configured state if a function fails
     with EINTR.
     
@@ -1247,32 +1247,32 @@ def libcoopgamma_native_skip_message(address : int):
     libcoopgamma_skip_message(<libcoopgamma_context_t*><void*><intptr_t>address)
 
 
-def libcoopgamma_native_get_crtcs_send(address : int, async : int):
+def libcoopgamma_native_get_crtcs_send(address : int, async_ctx : int):
     '''
     List all available CRTC:s, send request part
     
-    @param   address:int  The address of the state of the library, must be connected
-    @param   async:int    The address of the `AsyncContext` for the request
-    @return  :int         Zero on success, the value of `errno` on failure
+    @param   address:int    The address of the state of the library, must be connected
+    @param   async_ctx:int  The address of the `AsyncContext` for the request
+    @return  :int           Zero on success, the value of `errno` on failure
     '''
     cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
-    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
+    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async_ctx
     if libcoopgamma_get_crtcs_send(ctx, actx) < 0:
         return int(errno)
     return 0
 
 
-def libcoopgamma_native_get_crtcs_recv(address : int, async : int):
+def libcoopgamma_native_get_crtcs_recv(address : int, async_ctx : int):
     '''
     List all available CRTC:s, receive response part
     
     @param   address:int     The address of the state of the library, must be connected
-    @param   async:int       The address of the `AsyncContext` for the request
+    @param   async_ctx:int   The address of the `AsyncContext` for the request
     @return  :int|list<str>  The value of `errno` (on failure), or (on success)
                              a list of the names of the available CRTC:s
     '''
     cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
-    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
+    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async_ctx
     cdef char** crtcs = libcoopgamma_get_crtcs_recv(ctx, actx)
     cdef bytes bs
     if crtcs is NULL:
@@ -1319,20 +1319,20 @@ def libcoopgamma_native_get_crtcs_sync(address : int):
     return ret
 
 
-def libcoopgamma_native_get_gamma_info_send(crtc : str, address : int, async : int):
+def libcoopgamma_native_get_gamma_info_send(crtc : str, address : int, async_ctx : int):
     '''
     Retrieve information about a CRTC:s gamma ramps, send request part
     
     Cannot be used before connecting to the server
     
-    @param   crtc:crtc    The name of the CRTC
-    @param   address:int  The address of the state of the library, must be connected
-    @param   async:int    The address of the information about the request, that is
-                          needed to identify and parse the response, is stored here
-    @return  :int         Zero on success, the value of `errno` on error
+    @param   crtc:crtc      The name of the CRTC
+    @param   address:int    The address of the state of the library, must be connected
+    @param   async_ctx:int  The address of the information about the request, that is
+                            needed to identify and parse the response, is stored here
+    @return  :int           Zero on success, the value of `errno` on error
     '''
     cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
-    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
+    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async_ctx
     cdef char* ccrtc = NULL
     try:
         bs = crtc.encode('utf-8') + bytes([0])
@@ -1348,18 +1348,18 @@ def libcoopgamma_native_get_gamma_info_send(crtc : str, address : int, async : i
     return 0
 
 
-def libcoopgamma_native_get_gamma_info_recv(address : int, async : int):
+def libcoopgamma_native_get_gamma_info_recv(address : int, async_ctx : int):
     '''
     Retrieve information about a CRTC:s gamma ramps, receive response part
     
     @param   address:int           The address of the state of the library, must be connected 
-    @param   async:int             The address of the information about the request
+    @param   async_ctx:int         The address of the information about the request
     @return  :int|(:bool, :tuple)  The value of `errno` (on failure) or:
                                    Element 0: whether the call was successful
                                    Element 1: tuple with the data for the structure response (possibly error)
     '''
     cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
-    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
+    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async_ctx
     cdef libcoopgamma_crtc_info_t info
     cdef bytes bs
     try:
@@ -1428,21 +1428,21 @@ def libcoopgamma_native_get_gamma_info_sync(crtc : str, address : int):
     return ret
 
 
-def libcoopgamma_native_get_gamma_send(query, address : int, async : int):
+def libcoopgamma_native_get_gamma_send(query, address : int, async_ctx : int):
     
     '''
     Retrieve the current gamma ramp adjustments, send request part
     
     Cannot be used before connecting to the server
     
-    @param   query:Query  The query to send
-    @param   address:int  The address of the state of the library, must be connected
-    @param   async:int    The address of the information about the request, that is
-                          needed to identify and parse the response, is stored here
-    @return               Zero on success, the value of `errno` on failure
+    @param   query:Query    The query to send
+    @param   address:int    The address of the state of the library, must be connected
+    @param   async_ctx:int  The address of the information about the request, that is
+                            needed to identify and parse the response, is stored here
+    @return                 Zero on success, the value of `errno` on failure
     '''
     cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
-    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
+    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async_ctx
     cdef libcoopgamma_filter_query_t qry
     crtc_bs = query.crtc.encode('utf-8') + bytes([0])
     qry.high_priority = <int64_t>(query.high_priority)
@@ -1461,18 +1461,18 @@ def libcoopgamma_native_get_gamma_send(query, address : int, async : int):
     return 0
     
 
-def libcoopgamma_native_get_gamma_recv(address : int, async : int):
+def libcoopgamma_native_get_gamma_recv(address : int, async_ctx : int):
     '''
     Retrieve the current gamma ramp adjustments, receive response part
     
     @param   address:int           The address of the state of the library, must be connected
-    @param   async:int             The address of the information about the request
+    @param   async_ctx:int         The address of the information about the request
     @return  :int|(:bool, :tuple)  The value of `errno` (on failure) or:
                                    Element 0: whether the call was successful
                                    Element 1: tuple with the data for the structure response (possibly error)
     '''
     cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
-    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
+    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async_ctx
     cdef libcoopgamma_filter_table_t table
     cdef bytes bs
     cdef libcoopgamma_ramps_t* rampsp
@@ -1766,21 +1766,21 @@ def libcoopgamma_native_copy_ramps(intptr_t dest_address, src, libcoopgamma_dept
         dest.u_blue  = <void*>bd
 
 
-def libcoopgamma_native_set_gamma_send(filtr, address : int, async : int):
+def libcoopgamma_native_set_gamma_send(filtr, address : int, async_ctx : int):
     '''
     Apply, update, or remove a gamma ramp adjustment, send request part
     
     Cannot be used before connecting to the server
     
-    @param   filtr:Filter  The filter to apply, update, or remove, gamma ramp
-                           meta-data must match the CRTC's
-    @param   address:int   The address of the state of the library, must be connected
-    @param   async:int     The address of the information about the request, that is needed to
-                           identify and parse the response, is stored here
-    @return  :int          Zero on success, the value of `errno` on failure
+    @param   filtr:Filter   The filter to apply, update, or remove, gamma ramp
+                            meta-data must match the CRTC's
+    @param   address:int    The address of the state of the library, must be connected
+    @param   async_ctx:int  The address of the information about the request, that is needed to
+                            identify and parse the response, is stored here
+    @return  :int           Zero on success, the value of `errno` on failure
     '''
     cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
-    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
+    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async_ctx
     cdef libcoopgamma_filter_t flr
     crtc_bs = filtr.crtc.encode('utf-8') + bytes([0])
     clss_bs = filtr.fclass.encode('utf-8') + bytes([0])
@@ -1817,18 +1817,18 @@ def libcoopgamma_native_set_gamma_send(filtr, address : int, async : int):
     return 0
 
 
-def libcoopgamma_native_set_gamma_recv(address : int, async : int):
+def libcoopgamma_native_set_gamma_recv(address : int, async_ctx : int):
     '''
     Apply, update, or remove a gamma ramp adjustment, receive response part
     
-    @param   address:int  The address of the state of the library, must be connected
-    @param   async:int    The address of the information about the request
-    @return  :tuple?      The value of `errno` (on failure) or:
-                          Element 0: whether the call was successful
-                          Element 1: tuple with the data for the structure response (possibly error)
+    @param   address:int    The address of the state of the library, must be connected
+    @param   async_ctx:int  The address of the information about the request
+    @return  :tuple?        The value of `errno` (on failure) or:
+                            Element 0: whether the call was successful
+                            Element 1: tuple with the data for the structure response (possibly error)
     '''
     cdef libcoopgamma_context_t* ctx = <libcoopgamma_context_t*><void*><intptr_t>address
-    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async
+    cdef libcoopgamma_async_context_t* actx = <libcoopgamma_async_context_t*><void*><intptr_t>async_ctx
     cdef bytes bs
     if libcoopgamma_set_gamma_recv(ctx, actx) < 0:
         desc = None
