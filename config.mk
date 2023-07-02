@@ -1,16 +1,18 @@
 PREFIX = /usr
 
-PY_MAJOR   = $$(python --version 2>&1 | cut -d ' ' -f 2 | cut -d . -f 1)
-PY_MINOR   = $$(python$(PYTHON_MAJOR) --version 2>&1)
-PY_VER     = $(PY_MAJOR)$(PY_MINOR)
-PY_VERSION = $(PY_MAJOR).$(PY_MINOR)
+PYTHON_MAJOR   = $$(python --version 2>&1 | cut -d ' ' -f 2 | cut -d . -f 1)
+PYTHON_MINOR   = $$(python$(PYTHON_MAJOR) --version 2>&1)
+PYTHON_VER     = $(PYTHON_MAJOR)$(PYTHON_MINOR)
+PYTHON_VERSION = $(PYTHON_MAJOR).$(PYTHON_MINOR)
 
-PYTHONDIR = $(PREFIX)/lib/python$(PY_VERSION)
+PYTHONDIR = $(PREFIX)/lib/python$(PYTHON_VERSION)
 
-CYTHON    = cython
+CYTHON    = cython$(PYTHON_MAJOR)
 PKGCONFIG = pkg-config
-PYTHON    = python$(PY_MAJOR)
+PYTHON    = python$(PYTHON_MAJOR)
+
+CC = c99
 
 CPPFLAGS =
-CFLAGS   = -std=c99 -Wall $$($(PKGCONFIG) --cflags python$(PY_MAJOR)) -O2
-LDFLAGS  = $$($(PKGCONFIG) --libs python$(PY_MAJOR)) -lcoopgamma
+CFLAGS   = -Wall $$($(PKGCONFIG) --cflags python$(PYTHON_MAJOR)) -O2
+LDFLAGS  = $$($(PKGCONFIG) --libs python$(PYTHON_MAJOR)) -lcoopgamma
