@@ -1,7 +1,7 @@
 PREFIX = /usr
 
 PYTHON_MAJOR   = $$(python --version 2>&1 | cut -d ' ' -f 2 | cut -d . -f 1)
-PYTHON_MINOR   = $$(python$(PYTHON_MAJOR) --version 2>&1)
+PYTHON_MINOR   = $$(python$(PYTHON_MAJOR) --version 2>&1 | cut -d . -f 2)
 PYTHON_VER     = $(PYTHON_MAJOR)$(PYTHON_MINOR)
 PYTHON_VERSION = $(PYTHON_MAJOR).$(PYTHON_MINOR)
 
