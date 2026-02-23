@@ -771,7 +771,7 @@ def _libcoopgamma_native_get_methods():
     return ret
 
 
-def _libcoopgamma_native_get_method_and_site(method : str, site : str):
+def _libcoopgamma_native_get_method_and_site(method : str | NoneType, site : str | NoneType):
     '''
     Get the adjustment method and site
     
@@ -819,7 +819,7 @@ def _libcoopgamma_native_get_method_and_site(method : str, site : str):
         free(rcssite)
 
 
-def _libcoopgamma_native_get_pid_file(method : str, site : str):
+def _libcoopgamma_native_get_pid_file(method : str | NoneType, site : str | NoneType):
     '''
     Get the PID file of the coopgamma server
     
@@ -857,7 +857,7 @@ def _libcoopgamma_native_get_pid_file(method : str, site : str):
     return int(errno)
 
 
-def _libcoopgamma_native_get_socket_file(method : str, site : str):
+def _libcoopgamma_native_get_socket_file(method : str | NoneType, site : str | NoneType):
     '''
     Get the socket file of the coopgamma server
     
@@ -1086,7 +1086,7 @@ def _libcoopgamma_native_async_context_unmarshal(buf : bytes):
         free(bs)
 
 
-def _libcoopgamma_native_connect(method : str, site : str, address : int):
+def _libcoopgamma_native_connect(method : str | NoneType, site : str | NoneType, address : int):
     '''
     Connect to a coopgamma server, and start it if necessary
     
@@ -2382,7 +2382,7 @@ class FilterTable:
         if filters is None:
             self.filters
         else:
-            self.filters    = list(QueriedFilter(*f) if isinstance(f, tuple) else f for f in filters)
+            self.filters = list(QueriedFilter(*f) if isinstance(f, tuple) else f for f in filters)
     
     def make_ramps(self):
         '''
