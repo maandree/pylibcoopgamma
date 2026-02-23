@@ -1,12 +1,12 @@
 NAME
-	pylibcoopgamma - Python 3 wrapper for libcoopgamma.
+	pylibcoopgamma - Python 3 wrapper for libcoopgamma
 
 DESCRIPTION
 	pylibcoopgamma is a Python 3 wrapper for libcoopgamma, a library that
-	enables multiple programs to make gamma ramps adjustment concurrently
-	without overriding each others' changes.
+	enables multiple programs to make gamma ramp adjustments concurrently,
+	without overriding each other's changes.
 
 SEE ALSO
 	libcoopgamma(7)
 
-	Full documentation available locally via the command help in python(1).
+	Full documentation is available locally via the help command in python(1).

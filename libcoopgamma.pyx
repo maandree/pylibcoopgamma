@@ -82,7 +82,7 @@ cdef extern from "include-libcoopgamma.h":
         size_t blue_size
         # The number of stops in the blue ramp
         libcoopgamma_colourspace_t colourspace
-        # The monitor's colurspace
+        # The monitor's colourspace
         int have_gamut
         # Whether `.red_x`, `.red_y`, `.green_x`, `.green_y`, `.blue_x`, `.blue_y`,
         # `.white_x`, and `.white_y` are set.
@@ -107,13 +107,13 @@ cdef extern from "include-libcoopgamma.h":
         # The y-value (CIE xyY) of the monitor's default white point, multiplied by 1024
 
     ctypedef struct libcoopgamma_filter_query_t:
-    # Data sent to the coopgamma server when requestng the current filter table
+    # Data sent to the coopgamma server when requesting the current filter table
         int64_t high_priority
-        # Do no return filters with higher priority than this value
+        # Do not return filters with higher priority than this value
         int64_t low_priority
-        # Do no return filters with lower priority than this value
+        # Do not return filters with lower priority than this value
         char* crtc
-        # The CRTC for which the the current filters shall returned
+        # The CRTC for which the current filters shall be returned
         int coalesce
         # Whether to coalesce all filters into one gamma ramp triplet
 
@@ -309,12 +309,12 @@ the allocation of the record itself is not freed
 Always call this function after failed call to `libcoopgamma_queried_filter_initialise`
 or failed call to `libcoopgamma_queried_filter_unmarshal
 
-@param  this  The record to destro
+@param  this  The record to destroy
 '''
 
 cdef extern int libcoopgamma_filter_table_initialise(libcoopgamma_filter_table_t* this) nogil
 '''
-Initialise a `libcoopgamma_filter_table_t
+Initialise a `libcoopgamma_filter_table_t`
 
 @param   this  The record to initialise
 @return        Zero on success, -1 on error
@@ -322,18 +322,7 @@ Initialise a `libcoopgamma_filter_table_t
 
 cdef extern void libcoopgamma_filter_table_destroy(libcoopgamma_filter_table_t* this) nogil
 '''
-Release all resources allocated to  a `libcoopgamma_filter_table_t`,
-the allocation of the record itself is not freed
-
-Always call this function after failed call to `libcoopgamma_filter_table_initialise`
-or failed call to `libcoopgamma_filter_table_unmarshal`
-
-@param  this  The record to destroy
-'''
-
-cdef extern void libcoopgamma_filter_table_destroy(libcoopgamma_filter_table_t* this) nogil
-'''
-Release all resources allocated to  a `libcoopgamma_filter_table_t`,
+Release all resources allocated to a `libcoopgamma_filter_table_t`,
 the allocation of the record itself is not freed
 
 Always call this function after failed call to `libcoopgamma_filter_table_initialise`
@@ -564,7 +553,7 @@ Wait for the next message to be received
                    if the message is corrupt any of the listed requests can
                    be selected even if it is not for any of the requests.
                    Functions that parse the message will detect such corruption.
-@return            Zero on success, -1 on error. If the the message is ignored,
+@return            Zero on success, -1 on error. If the message is ignored,
                    which happens if corresponding `libcoopgamma_async_context_t`
                    is not listed, -1 is returned and `errno` is set to 0. If -1
                    is returned, `errno` is set to `ENOTRECOVERABLE` you have
@@ -2271,13 +2260,13 @@ class CRTCInfo:
 
 class FilterQuery:
     '''
-    Data sent to the coopgamma server when requestng the current filter table
+    Data sent to the coopgamma server when requesting the current filter table
     
-    @variable  high_priority:int  Do no return filters with higher priority than
+    @variable  high_priority:int  Do not return filters with higher priority than
                                   this value. This is a signed 64-bit integer.
-    @variable  low_priority:int   Do no return filters with lower priority than
+    @variable  low_priority:int   Do not return filters with lower priority than
                                   this value. This is a signed 64-bit integer.
-    @variable  crtc:str           The CRTC for which the the current filters shall returned
+    @variable  crtc:str           The CRTC for which the current filters shall be returned
     @variable  coalesce:bool      Whether to coalesce all filters into one gamma ramp triplet
     '''
     def __init__(self, high_priority = 9223372036854775807,
@@ -2285,11 +2274,11 @@ class FilterQuery:
         '''
         Constructor
         
-        @param  high_priority:int  Do no return filters with higher priority than
+        @param  high_priority:int  Do not return filters with higher priority than
                                    this value. This is a signed 64-bit integer.
-        @param  low_priority:int   Do no return filters with lower priority than
+        @param  low_priority:int   Do not return filters with lower priority than
                                    this value. This is a signed 64-bit integer.
-        @param  crtc:str           The CRTC for which the the current filters shall returned
+        @param  crtc:str           The CRTC for which the current filters shall be returned
         @param  coalesce:bool      Whether to coalesce all filters into one gamma ramp triplet
         '''
         self.high_priority = high_priority
